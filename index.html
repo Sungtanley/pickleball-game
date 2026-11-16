@@ -1,1602 +1,930 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>피클볼 2D 리듬 & 전술 게임</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #0b1329;
-            touch-action: none;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            user-select: none;
-        }
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-        .ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-        }
-        .pointer-events-auto {
-            pointer-events: auto;
-        }
-        @keyframes popIn {
-            0% { transform: scale(0.85); opacity: 0; }
-            50% { transform: scale(1.03); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .animate-pop {
-            animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-        @keyframes slideDown {
-            0% { transform: translateY(-40px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
-        }
-        .animate-slide-down {
-            animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+<title>피클볼 챔피언스 | 1인·2인 협동·2인 대결 | 16종 패들</title>
+<style>
+:root{--bg:#0b1728;--surface:#17273b;--stroke:#344962;--white:#f6faff;--lime:#e4ff62;--aqua:#55e7e1;--orange:#ff9c60;--muted:#b7c7db}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;font-family:system-ui,-apple-system,'Noto Sans KR','Malgun Gothic',sans-serif;color:var(--white);background:radial-gradient(ellipse at 35% 0%,#213e5d 0%,#0c1829 48%,#07111f 100%);min-height:100vh}
+button,select{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent}button:focus-visible,select:focus-visible{outline:3px solid var(--aqua);outline-offset:3px}
+header{max-width:1240px;margin:0 auto;padding:19px 22px 12px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
+.brand{font-weight:950;font-size:clamp(19px,2.5vw,27px);letter-spacing:-1px}.brand b{color:var(--lime)}.subtitle{color:#bed5eb;font-weight:650;font-size:12px;letter-spacing:.02em;margin-top:4px}
+.topright{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.tag{border:1px solid #56718a;border-radius:999px;font-size:12px;font-weight:800;padding:7px 10px;color:#c7dfef}.smallbtn{background:#31485e;color:#fff;border:1px solid #536f85;border-radius:12px;font-weight:850;padding:9px 12px}.smallbtn:hover{background:#43617b}
+main{max-width:1240px;padding:0 22px 35px;margin:auto}.game-layout{display:grid;grid-template-columns:minmax(0,920px) minmax(260px,300px);gap:15px;align-items:start}
+.gamewrap{position:relative;border:2px solid #4a6a80;border-radius:19px;overflow:hidden;background:#0c2231;box-shadow:0 16px 65px #0007;aspect-ratio:920/620;touch-action:none}.gamewrap canvas{display:block;width:100%;height:100%;touch-action:none}
+.hudtop{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:16px;background:#12273c;border:1px solid #42617b;margin-bottom:11px}.scoreteam{text-align:center;min-width:70px}.scoreteam .nam{font-size:12px;font-weight:850;color:#c8d4e3}.scoreteam .val{font-size:32px;font-weight:1000;line-height:1.15}.scoreteam.mine .val{color:var(--lime)}.scoreteam.opp .val{color:var(--orange)}.scorecenter{text-align:center}.scorecenter .call{font-size:24px;font-weight:1000;letter-spacing:1px}.scorecenter .tiny{color:#b7cada;font-size:11px;font-weight:750;margin-top:4px}
+.sidebar{display:flex;flex-direction:column;gap:11px}.panel{border:1px solid #405a73;background:#14263a;border-radius:15px;padding:15px}.ptitle{font-weight:950;margin:0 0 12px;font-size:15px}.field{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0;font-size:13px;font-weight:750}.field select{max-width:162px;background:#263b50;border:1px solid #4d6c82;border-radius:9px;padding:9px 5px;color:#fff;font-size:12px;font-weight:850}
+.primary{width:100%;border:0;border-radius:11px;padding:13px 10px;font-size:15px;font-weight:950;color:#162a22;background:var(--lime);box-shadow:0 4px 0 #97a93e}.primary:active{transform:translateY(2px);box-shadow:0 2px 0 #97a93e}.primary:disabled{opacity:.45;cursor:default}
+.secondary{width:100%;border-radius:10px;border:1px solid #526980;background:#2e455c;color:#fff;font-weight:850;padding:9px}
+.decision-strip{margin-top:10px;padding:14px 17px;background:#163a50;border:1px solid #8ecad0;border-left:5px solid #e4ff62;border-radius:13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;line-height:1.55}.decision-strip[hidden]{display:none}.decision-strip strong{color:#eaff88;font-size:14px}.decision-strip span{color:#d8e8f2;font-size:12px}.divisiontag{display:block;background:#203f50;border:1px solid #527b89;border-radius:10px;padding:10px 8px;font-size:12px;color:#e4f6f4;font-weight:800;margin:9px 0}.notice{color:#e3eeff;font-size:13px;line-height:1.65;min-height:62px}.notice strong{color:var(--lime)}.pill{font-size:11px;font-weight:850;color:#0d2630;background:#95edee;border-radius:999px;padding:4px 9px;display:inline-block;margin-bottom:7px}
+.log{margin:0;padding:0 0 0 16px;color:#c2d7e8;font-size:12px;line-height:1.6;max-height:195px;overflow:auto}.log li{margin-bottom:7px}.log li:first-child{color:var(--lime);font-weight:850}
+.statusbar{background:#11263d;border:1px solid #395a74;padding:13px 15px;border-radius:13px;margin:11px 0 0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;font-weight:800}.statusbar .mode{color:var(--lime)}.statusbar .instruction{color:#b8d2e3;font-size:12px}
+.controls{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:12px}.controller{border:1px solid #3d5b73;border-radius:14px;background:#152b43;padding:10px 12px}.ctlcaption{font-size:12px;font-weight:850;color:#b4cde0;text-align:center;margin-bottom:7px}.dpad{display:grid;grid-template-columns:repeat(3,49px);grid-template-rows:repeat(2,42px);gap:5px;justify-content:center}.dpad button{border-radius:11px;border:1px solid #7996aa;background:#38556e;color:#fff;font-weight:950;touch-action:none;user-select:none;font-size:18px}.dpad button.active,.dpad button:active{background:var(--aqua);color:#09202a}.dpad [data-dir="up"]{grid-column:2}.dpad [data-dir="left"]{grid-column:1;grid-row:2}.dpad [data-dir="down"]{grid-column:2;grid-row:2}.dpad [data-dir="right"]{grid-column:3;grid-row:2}
+.shotbuttons{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.shot{border:1px solid #60839c;background:#304b60;color:#f5fbff;border-radius:10px;padding:9px 3px;font-size:12px;font-weight:950}.shot.active{background:var(--aqua);border-color:#aafffa;color:#0a2935}.shot.charging{background:#e4ff62;border-color:#fffbc0;color:#163124;box-shadow:0 0 0 2px #dcff8c6a}.shot:hover{background:#47788d}.shot:active{transform:translateY(1px);background:var(--lime);color:#172b29}.hit{margin-top:8px;background:var(--lime);color:#172a23;border:0;border-radius:11px;width:100%;font-weight:1000;letter-spacing:.4px;padding:13px 8px;touch-action:none;box-shadow:0 3px 0 #9faf3e}.hit:active{transform:translateY(2px)}.keyhint{text-align:center;font-size:11px;color:#b0c7da;margin-top:9px}.powerbox{margin-top:10px;border:1px solid #537389;border-radius:11px;padding:9px 11px;background:#0f2639}.powertop{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;margin-bottom:7px}.powertop strong{color:#eaff7f;font-size:15px;font-variant-numeric:tabular-nums}.powertrack{position:relative;background:#273d4e;height:15px;border-radius:99px;overflow:hidden;box-shadow:inset 0 1px 4px #0008}.powerfill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#78d6b4,#e7fa7b 60%,#ffa462 83%,#ee6e69);transition:width .04s linear}.powerideal{position:absolute;left:45%;width:25%;top:0;bottom:0;background:#d9ffae25;border-inline:1px dashed #f8ffa2aa;pointer-events:none}.powerlegend{display:flex;justify-content:space-between;gap:4px;font-size:10px;color:#b5ccda;margin-top:5px}.powerlegend span:nth-child(2){color:#eaff7f}
+.rules{margin-top:13px;border:1px solid #355873;border-radius:13px;background:#0d2437;padding:13px 15px}.rules-title{font-weight:900;font-size:14px;margin-bottom:9px}.rule-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.rule{background:#172f46;border:1px solid #31516a;border-radius:10px;padding:10px 11px;font-size:12px;color:#cfe0ef;line-height:1.6}.rule b{display:block;color:var(--lime);margin-bottom:2px}
+.overlay{position:absolute;inset:0;background:#061629a6;display:flex;align-items:center;justify-content:center;padding:15px;z-index:4;backdrop-filter:blur(3px)}.overlay.hidden{display:none}.modal{width:min(465px,96%);background:#132b43;border:1px solid #638bab;box-shadow:0 18px 70px #000b;border-radius:22px;padding:22px 25px 24px;text-align:center}.modal .emblem{font-size:39px;margin-bottom:6px}.modal h1{font-size:clamp(21px,3vw,28px);margin:3px 0 10px;line-height:1.35}.modal p{font-size:14px;line-height:1.7;color:#cee0f2;margin:6px 0 13px}.modal .foot{font-size:12px;color:#a9cadb;margin-top:14px}
+.footer{font-size:11px;color:#90adbf;padding:10px 2px;line-height:1.6}
+@media(max-width:1050px){.game-layout{grid-template-columns:1fr}.sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.sidebar .hudtop{grid-column:1/-1}.sidebar .panel:last-child{grid-column:1/-1}}
+@media(max-width:650px){header{padding:14px 12px 9px}main{padding:0 8px 28px}.tag{display:none}.gamewrap{border-radius:11px}.sidebar{grid-template-columns:1fr}.sidebar .hudtop,.sidebar .panel:last-child{grid-column:auto}.rules .rule-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.controls{grid-template-columns:1fr 1.2fr;gap:6px}.controller{padding:9px 5px}.dpad{grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,43px);gap:4px}.shot{padding:8px 2px;font-size:11px}}
+@media (pointer:coarse) and (max-width:700px){.controls{position:fixed;left:0;right:0;bottom:0;z-index:9;padding:8px;background:#10273be8;backdrop-filter:blur(8px);margin:0;border-top:1px solid #66899c}.rules{margin-bottom:165px}.keyhint{display:none}.controller{background:#122d43d9}.hit{padding:11px 6px}}
+
+/* 16종 패들 수집 및 합성 UI */
+.collect-summary{display:flex;align-items:center;gap:11px;margin-bottom:11px;padding:11px;background:#0d263b;border:1px solid #45657e;border-radius:12px}
+.collect-icon{width:45px;height:45px;display:grid;place-items:center;font-size:27px;border:1px solid #53788e;border-radius:11px;background:#203f52}
+.collect-summary b{color:#f1ffa9;font-size:13px}.collect-summary small{display:block;color:#b2cfdf;font-size:11px;line-height:1.55;margin-top:2px}
+.collect-bonus{font-size:12px;color:#d9eaf4;line-height:1.6;margin-top:9px}
+.collect-bonus b{color:#fff4a9}
+.inventory-open{width:100%;margin-top:9px;background:#dffb86;color:#163327;border:0;border-radius:11px;padding:12px 9px;font-weight:950;font-size:14px}
+.inventory-open:disabled{background:#3a5061;color:#a0b2bb;cursor:not-allowed}
+.inventory-overlay[hidden]{display:none!important}
+.inventory-overlay{position:fixed;inset:0;z-index:40;background:#051222e9;display:flex;align-items:center;justify-content:center;padding:15px;backdrop-filter:blur(5px)}
+.inventory-modal{width:min(1060px,100%);max-height:min(92dvh,900px);overflow:auto;overscroll-behavior:contain;background:#11273e;border:2px solid #6e9db0;border-radius:21px;box-shadow:0 24px 85px #000c;padding:18px 20px 20px}
+.inventory-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.inventory-top h2{font-size:clamp(19px,2.6vw,25px);margin:0}.inventory-sub{font-size:12px;line-height:1.6;color:#b6d2e3;margin:0 0 12px}
+.inventory-close{border:1px solid #7593a8;border-radius:10px;background:#2e4960;color:white;font-weight:900;padding:8px 15px}
+.inventory-head-row{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:11px}
+.inventory-box{background:#1d354c;border:1px solid #466b82;border-radius:13px;padding:13px}
+.inventory-box h3{margin:0 0 8px;font-size:14px}
+.token-count{font-size:20px;color:#eaff89;font-weight:1000;font-variant-numeric:tabular-nums}
+.token-row{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.draw-btn{padding:11px 15px;color:#172931;background:#eaff89;border:0;border-radius:10px;font-weight:950}
+.draw-btn:disabled{background:#465a64;color:#b2c3c5;cursor:not-allowed}
+.draw-result{min-height:37px;color:#fff0b1;font-size:13px;font-weight:850;margin-top:8px;line-height:1.65}
+.equip-status{color:#cfe7f5;font-size:13px;line-height:1.7}
+.equip-status strong{color:#eaff89}
+.collection-title{font-size:15px;font-weight:950;margin:13px 0 9px;display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.collection-title span{font-size:12px;color:#9dbacd}
+.collection-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.item-card{position:relative;text-align:left;background:#1b3045;border:1px solid #46627b;border-radius:12px;padding:10px;min-height:104px;color:#ebf7ff;display:flex;flex-direction:column;gap:5px}
+.item-card.owned{background:linear-gradient(140deg,#213d50,#172c42)}
+.item-card.locked{opacity:.52}.item-card.unlocked{opacity:.82;border-style:dashed}
+.item-card.selected{outline:2px solid #ecff8d;outline-offset:1px}
+.item-card.equipped{border-color:#d7f77c;box-shadow:inset 0 0 0 1px #b9e96266}
+.item-card:disabled{cursor:default}.item-card .item-line{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;line-height:1.4}
+.item-card .element-emoji{font-size:20px;flex:none}
+.item-card .tier-note{font-size:11px;font-weight:800;color:#b6d3e6}
+.item-card .copy-count{position:absolute;right:7px;top:6px;font-size:11px;border:1px solid #768fa3;border-radius:6px;padding:2px 6px;background:#102132;color:#fff}
+.item-card .card-badge{font-size:10px;color:#f0ffa7;line-height:1.2}
+.item-card .paddle-picture{height:15px;width:55%;margin:2px auto 0;border-radius:18px;transform:rotate(-20deg);background:var(--item-glow);box-shadow:0 0 12px var(--item-glow)}
+.item-card.tier-3 .paddle-picture{box-shadow:0 0 17px var(--item-glow),0 0 7px #fff7}
+.item-card.tier-4 .paddle-picture{box-shadow:0 0 24px var(--item-glow),0 0 15px var(--item-glow),0 0 6px #fff}
+.item-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:9px}
+.item-actions button,.fuse-btn{border:1px solid #80b9a4;border-radius:9px;background:#327b65;padding:9px 13px;color:#fff;font-weight:900}
+.item-actions button:disabled,.fuse-btn:disabled{opacity:.4;cursor:not-allowed}
+.fuse-workshop{margin-top:13px;background:#162d44;border:1px solid #597c95;border-radius:14px;padding:12px 14px}
+.fuse-workshop h3{margin:0 0 5px;font-size:16px}
+.fuse-tip{font-size:12px;color:#bed6e5;line-height:1.6;margin:0 0 8px}
+.fuse-picks{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.fuse-picks label{font-size:12px;font-weight:900;color:#e4f5fd}
+.fuse-picks select{width:100%;margin-top:5px;background:#29485e;color:#fff;border:1px solid #749aaf;border-radius:8px;padding:9px 8px;font-size:12px}
+.fuse-preview{color:#f2ffbf;font-weight:850;font-size:13px;line-height:1.6;margin:9px 0}
+.fuse-btn{background:#e4ff83;color:#1b3628;border:0;padding:11px 15px}
+.reward-ribbon{border:1px solid #f4d48b;background:#574a31;color:#fff3ba;font-weight:850;font-size:12px;border-radius:10px;padding:8px 10px;margin:9px 0}
+.reward-ribbon[hidden]{display:none}
+@media(max-width:750px){.inventory-head-row{grid-template-columns:1fr}.collection-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-modal{padding:13px}.item-card{min-height:96px}.fuse-picks{grid-template-columns:1fr}.inventory-overlay{padding:7px}}
+
+/* Three-mode multiplayer additions */
+.mode-choices{display:grid;grid-template-columns:1fr;gap:7px;margin:10px 0 12px;text-align:left}
+.mode-choice{display:flex;align-items:center;gap:10px;background:#203c55;border:1px solid #597b94;border-radius:11px;padding:9px 12px;font-size:13px;font-weight:850;cursor:pointer;color:#e7f8ff}
+.mode-choice:has(input:checked){border-color:#e4ff79;background:#375a56;color:#f6ffbd;box-shadow:0 0 0 1px #e4ff7955}
+.mode-choice input{width:17px;height:17px;accent-color:#e4ff79}
+.mode-guide{background:#09283b;border:1px solid #406d85;border-radius:11px;padding:8px;color:#bce7e7;font-size:12px;line-height:1.65}
+.modal{width:min(505px,99%);padding:14px 19px 17px;max-height:96%;overflow:auto}
+.modal h1{margin:0 0 6px}.modal p{margin:4px 0 7px;font-size:12px}
+.dual-controller{margin-top:7px;padding:9px 11px;border:1px solid #506f89;border-radius:11px;background:#172d43;color:#cce8fb;font-size:12px;line-height:1.6}
+.dual-controller strong{color:#f6ffa4}
+#powerBox2[hidden],#equipTargetWrap[hidden]{display:none!important}
+#equipTargetWrap{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:9px 10px;border-radius:10px;margin-bottom:10px;background:#2a465c;color:#ecfff1;font-size:13px;font-weight:850}
+#equipTargetWrap select{background:#183548;color:#fff;border:1px solid #74a9bd;border-radius:8px;padding:7px 10px;font-weight:850}
+.mode-pill{display:inline-block;padding:4px 8px;background:#28566b;border-radius:6px;color:#fff3a7;font-weight:850;font-size:12px}
+@media(max-width:650px){.modal{padding:11px 12px}.mode-choice{padding:6px 9px;font-size:11px}.mode-guide{font-size:10px}}
+</style>
 </head>
 <body>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <!-- 실점 및 파울 사유 알림 배너 -->
-    <div id="faultModal" class="hidden absolute top-16 left-1/2 transform -translate-x-1/2 bg-slate-900/95 text-white px-6 py-4 rounded-2xl shadow-2xl border-2 border-red-500 z-50 text-center animate-slide-down max-w-lg w-11/12 backdrop-blur-md">
-        <div class="flex items-center justify-center gap-2 mb-1 text-red-400 font-extrabold text-xs uppercase tracking-widest">
-            <span>🚨</span> <span id="faultTypeTitle">파울 / 실점 발생</span> <span>🚨</span>
-        </div>
-        <p id="faultReasonText" class="text-sm sm:text-base font-bold text-amber-300 leading-snug">
-            파울 사유 메시지
-        </p>
-    </div>
-
-    <div id="uiContainer" class="ui-layer">
-        <!-- 1단계: 인원 선택 화면 -->
-        <div id="startScreen" class="text-center bg-slate-900/95 p-8 rounded-3xl shadow-2xl pointer-events-auto border border-slate-700 animate-pop max-w-sm w-full mx-4 backdrop-blur-xl">
-            <h1 class="text-3xl font-black text-white mb-1 tracking-tight">🏓 피클볼 프로 2D</h1>
-            <p class="text-emerald-400 font-semibold mb-6 text-xs">리듬 & 파워 차징 전술 테니스</p>
-            
-            <div class="flex flex-col gap-3">
-                <button id="select1pBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 px-6 rounded-2xl text-base transition-all transform hover:scale-102 shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2">
-                    <span>👤</span> 1인용 (vs CPU)
-                </button>
-                <button id="select2pBtn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 px-6 rounded-2xl text-base transition-all transform hover:scale-102 shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2">
-                    <span>👥</span> 2인용 (1P vs 2P)
-                </button>
-            </div>
-        </div>
-
-        <!-- 2단계: 모드 및 난이도 선택 화면 -->
-        <div id="ruleSelectScreen" class="hidden text-center bg-slate-900/95 p-6 sm:p-8 rounded-3xl shadow-2xl pointer-events-auto border border-slate-700 animate-pop max-w-md w-full mx-4 backdrop-blur-xl">
-            <h2 class="text-2xl font-black text-white mb-1">게임 모드 설정</h2>
-            <p id="playerModeSubtext" class="text-amber-400 font-semibold mb-4 text-xs">1인용 (vs CPU)</p>
-
-            <!-- CPU 난이도 설정 -->
-            <div id="difficultyContainer" class="mb-4 bg-slate-800/80 p-3 rounded-2xl border border-slate-700">
-                <p class="text-xs font-bold text-slate-300 mb-2">⚙️ CPU 난이도 선택</p>
-                <div class="flex gap-2 justify-center">
-                    <button id="diffEasyBtn" class="diff-btn flex-1 py-2 px-1 rounded-xl text-xs font-bold bg-slate-700 text-slate-300 hover:bg-emerald-600 transition-all border border-slate-600">
-                        🌱 쉬움
-                    </button>
-                    <button id="diffNormalBtn" class="diff-btn flex-1 py-2 px-1 rounded-xl text-xs font-bold bg-blue-600 text-white shadow transition-all border border-blue-400">
-                        ⚡ 보통
-                    </button>
-                    <button id="diffHardBtn" class="diff-btn flex-1 py-2 px-1 rounded-xl text-xs font-bold bg-slate-700 text-slate-300 hover:bg-rose-600 transition-all border border-slate-600">
-                        🔥 어려움
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex flex-col gap-3 mb-4">
-                <!-- 무한 랠리 -->
-                <button id="ruleRallyBtn" class="bg-slate-800/90 hover:bg-slate-700 text-left p-3.5 rounded-2xl border border-blue-500/50 transition-all flex flex-col gap-1">
-                    <div class="text-blue-400 font-bold text-sm flex items-center justify-between">
-                        <span>🔥 무한 랠리 모드</span>
-                        <span class="text-[10px] bg-blue-900/80 text-blue-200 px-2 py-0.5 rounded-full">연속 기록</span>
-                    </div>
-                    <p class="text-slate-300 text-xs">실수 없이 랠리를 길게 연결하여 최고 점수를 기록합니다.</p>
-                </button>
-
-                <!-- 11점 매치 -->
-                <button id="ruleMatchBtn" class="bg-slate-800/90 hover:bg-slate-700 text-left p-3.5 rounded-2xl border border-emerald-500/50 transition-all flex flex-col gap-1">
-                    <div class="text-emerald-400 font-bold text-sm flex items-center justify-between">
-                        <span>🏆 11점 매치 모드</span>
-                        <span class="text-[10px] bg-emerald-900/80 text-emerald-200 px-2 py-0.5 rounded-full">정식 규정 + Side-Out</span>
-                    </div>
-                    <p class="text-slate-300 text-xs">투 바운스 규칙 + 엄격한 키친라인 서브 파울(Side-Out) 적용 11점 매치.</p>
-                </button>
-            </div>
-
-            <div class="text-slate-300 text-left bg-slate-800/80 p-3 rounded-2xl text-[11px] mb-4 border border-slate-700 leading-relaxed">
-                <p class="font-bold text-slate-200 border-b border-slate-700 pb-1 mb-1">🎮 조작 및 게이지 안내</p>
-                <p><strong class="text-blue-400">1P (하단):</strong> 이동=방향키 | 드라이브/서브=<strong>Space (누르고 떼기)</strong> | 딩크=L-Shift</p>
-                <p class="mt-0.5"><strong class="text-rose-400">2P (상단):</strong> 이동=WASD | 드라이브/서브=<strong>L-Shift (누르고 떼기)</strong> | 딩크=Z</p>
-                <p class="mt-1 text-amber-300">⚡ 서브/드라이브 게이지 <strong>30% 미만 시 키친존 낙하 파울!</strong> 공의 좌/우를 맞혀 타구 방향을 조절하세요!</p>
-            </div>
-
-            <button id="backToPlayerSelectBtn" class="text-slate-400 hover:text-white text-xs underline">
-                ← 인원 선택 화면으로 돌아가기
-            </button>
-        </div>
-
-        <!-- 게임 오버 화면 -->
-        <div id="gameOverScreen" class="hidden text-center bg-slate-900/95 p-8 rounded-3xl shadow-2xl pointer-events-auto border border-slate-700 max-w-sm w-full mx-4 backdrop-blur-xl">
-            <h2 id="gameOverTitle" class="text-3xl font-black text-rose-500 mb-2">게임 종료</h2>
-            <p id="gameOverScore" class="text-sm text-amber-300 font-bold mb-6 whitespace-pre-line leading-relaxed">최종 점수: 0</p>
-            <div class="flex gap-3 justify-center">
-                <button id="restartBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all transform hover:scale-105 shadow-lg shadow-emerald-600/30">
-                    다시 하기
-                </button>
-                <button id="homeBtnGameOver" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all transform hover:scale-105">
-                    메뉴로
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- HUD 게임 헤더 -->
-    <div id="hud" class="absolute top-0 left-0 w-full p-4 flex flex-col gap-2 pointer-events-none hidden z-30">
-        <div class="flex justify-between items-start w-full">
-            <button id="homeBtn" class="pointer-events-auto bg-slate-900/80 hover:bg-slate-800 text-white px-4 py-2 rounded-xl font-bold border border-slate-700 shadow-lg transition-transform hover:scale-105 text-xs backdrop-blur-md">
-                🏠 메인 메뉴
-            </button>
-            
-            <div id="scoreContainer" class="flex gap-4">
-                <!-- 랠리 HUD -->
-                <div id="rallyHud" class="flex gap-2">
-                    <div id="scoreBox1p" class="bg-slate-900/80 px-4 py-2 rounded-xl text-white font-bold text-sm border border-slate-700 backdrop-blur-md">
-                        점수: <span id="scoreDisplay" class="text-amber-400 font-extrabold text-base">0</span>
-                    </div>
-                    <div id="bestScoreBox" class="bg-slate-900/80 px-4 py-2 rounded-xl text-white font-bold text-sm border border-slate-700 backdrop-blur-md">
-                        최고: <span id="bestScoreDisplay" class="text-blue-400 font-extrabold text-base">0</span>
-                    </div>
-                </div>
-
-                <!-- 11점 매치 HUD -->
-                <div id="matchHud" class="hidden bg-slate-900/80 px-5 py-2 rounded-xl text-white font-bold text-sm border border-slate-700 backdrop-blur-md flex items-center gap-3">
-                    <div class="flex items-center gap-1.5">
-                        <span id="matchP2Label" class="text-rose-400 text-xs">CPU</span>
-                        <span id="p2MatchScore" class="text-lg text-rose-400 font-black">0</span>
-                    </div>
-                    <span class="text-slate-500 font-bold text-xs">:</span>
-                    <div class="flex items-center gap-1.5">
-                        <span id="p1MatchScore" class="text-lg text-blue-400 font-black">0</span>
-                        <span class="text-blue-400 text-xs">1P</span>
-                    </div>
-                    <div id="serverIndicator" class="ml-1 px-2.5 py-0.5 text-[10px] bg-amber-500 text-black font-extrabold rounded-full animate-pulse">
-                        1P 서브
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let audioCtx = null;
-
-        function initAudio() {
-            if (!audioCtx) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (AudioContext) {
-                    audioCtx = new AudioContext();
-                }
-            }
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        function playSound(type) {
-            if (!audioCtx) return;
-            try {
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                if (type === 'hit_drive') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(320, now);
-                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
-                    gain.gain.setValueAtTime(0.4, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-                    osc.start(now);
-                    osc.stop(now + 0.08);
-                } else if (type === 'hit_dink') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(450, now);
-                    osc.frequency.exponentialRampToValueAtTime(250, now + 0.06);
-                    gain.gain.setValueAtTime(0.25, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
-                    osc.start(now);
-                    osc.stop(now + 0.06);
-                } else if (type === 'bounce') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(280, now);
-                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.05);
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-                    osc.start(now);
-                    osc.stop(now + 0.05);
-                } else if (type === 'whistle') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(800, now);
-                    osc.frequency.setValueAtTime(1200, now + 0.1);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-                    osc.start(now);
-                    osc.stop(now + 0.25);
-                } else if (type === 'fault') {
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(180, now);
-                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-                    osc.start(now);
-                    osc.stop(now + 0.25);
-                } else if (type === 'point') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(523.25, now);
-                    osc.frequency.setValueAtTime(659.25, now + 0.08);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                    osc.start(now);
-                    osc.stop(now + 0.2);
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        const startScreen = document.getElementById('startScreen');
-        const ruleSelectScreen = document.getElementById('ruleSelectScreen');
-        const playerModeSubtext = document.getElementById('playerModeSubtext');
-        const difficultyContainer = document.getElementById('difficultyContainer');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const hud = document.getElementById('hud');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const bestScoreDisplay = document.getElementById('bestScoreDisplay');
-
-        const rallyHud = document.getElementById('rallyHud');
-        const matchHud = document.getElementById('matchHud');
-        const p1MatchScore = document.getElementById('p1MatchScore');
-        const p2MatchScore = document.getElementById('p2MatchScore');
-        const matchP2Label = document.getElementById('matchP2Label');
-        const serverIndicator = document.getElementById('serverIndicator');
-
-        const faultModal = document.getElementById('faultModal');
-        const faultTypeTitle = document.getElementById('faultTypeTitle');
-        const faultReasonText = document.getElementById('faultReasonText');
-
-        const LOGICAL_WIDTH = 600;
-        const LOGICAL_HEIGHT = 1000;
-        let scale = 1;
-        let offsetX = 0;
-        let offsetY = 0;
-
-        let state = 'menu';
-        let gamePlayers = '1p'; 
-        let gameRule = 'rally'; 
-        let cpuDifficulty = 'normal'; 
-
-        let isScoring = false;
-        let rallyShotCount = 0; // 0 = serve, 1 = receiver return, 2 = server return, >= 3 = volley legal
-
-        const DIFFICULTY_SETTINGS = {
-            easy: { speed: 0.08, missChance: 0.30, perfectChance: 0.50, dinkRatio: 0.30, timeMod: 150, label: '🌱 쉬움 (70% 수비 / 50% 퍼펙트)' },
-            normal: { speed: 0.09, missChance: 0.20, perfectChance: 0.80, dinkRatio: 0.30, timeMod: 0, label: '⚡ 보통 (80% 수비 / 80% 퍼펙트)' },
-            hard: { speed: 0.10, missChance: 0.10, perfectChance: 0.90, dinkRatio: 0.30, timeMod: -150, label: '🔥 어려움 (90% 수비 / 90% 퍼펙트)' }
-        };
-
-        let score = 0;
-        let p1Score = 0;
-        let p2Score = 0;
-        let currentServer = 1; 
-        let isServeState = false; 
-        let serveTimer = null;
-        let faultTimer = null;
-
-        let bestScore = localStorage.getItem('pickleball_pro_best') || 0;
-        bestScoreDisplay.innerText = bestScore;
-        let lastTime = 0;
-
-        const court = {
-            top: 100, bottom: 900, left: 50, right: 550,
-            netY: 500, kitchenTop: 410, kitchenBottom: 590, // 키친존 폭 축소 (350/650 -> 410/590)
-            midX: 300
-        };
-
-        const ball = {
-            x: 300, y: 500, z: 0,
-            startX: 300, startY: 500, endX: 300, endY: 500,
-            startTime: 0, endTime: 0,
-            isPlayerTurn: false, bounced: false,
-            heightMax1: 80, heightMax2: 40
-        };
-
-        let floatingTexts = [];
-        let particles = [];
-        let shockwaves = []; // 충격파 링 애니메이션 배열
-        let screenShake = { x: 0, y: 0, time: 0, intensity: 0 }; // 타격 임팩트 화면 흔들림
-
-        const keys = { 
-            w: false, a: false, s: false, d: false,
-            up: false, down: false, left: false, right: false,
-            space: false, slash: false, shiftLeft: false, shiftRight: false, keyZ: false
-        };
-
-        // 파워 게이지 차징 객체
-        const p1Charge = { active: false, value: 0 };
-        const p2Charge = { active: false, value: 0 };
-
-        // 타구 판정 거리(hitRadius)를 85 -> 95로 확장하고 이동 속도를 약간 보정하여 수비 범위 확대
-        const playerPaddle = { x: 300, y: 850, speed: 7.5, hitRadius: 95, swingTimer: 0, facing: 1, moveAnim: 0 }; 
-        const opponentPaddle = { x: 300, y: 150, targetX: 300, targetY: 150, speed: 7.5, hitRadius: 95, swingTimer: 0, facing: 1, moveAnim: 0 };
-
-        window.addEventListener('keydown', (e) => {
-            initAudio();
-            const k = e.key.toLowerCase();
-            
-            if (k === 'w') keys.w = true;
-            if (k === 'a') keys.a = true;
-            if (k === 's') keys.s = true;
-            if (k === 'd') keys.d = true;
-
-            if (e.code === 'ArrowUp') keys.up = true;
-            if (e.code === 'ArrowLeft') keys.left = true;
-            if (e.code === 'ArrowDown') keys.down = true;
-            if (e.code === 'ArrowRight') keys.right = true;
-
-            if (state === 'playing' && !isScoring) {
-                // 1P 드라이브/서브 파워 차징 시작
-                if (gamePlayers === '1p') {
-                    if (e.code === 'Space' && !p1Charge.active) {
-                        p1Charge.active = true;
-                        p1Charge.value = 0;
-                    }
-                    if (e.code === 'ShiftLeft') attemptHit('dink', 1, 0);
-                } else if (gamePlayers === '2p') {
-                    // 2인용 1P (스페이스바 또는 / 키)
-                    if ((e.code === 'Slash' || e.key === '/' || e.code === 'Space') && !p1Charge.active) {
-                        p1Charge.active = true;
-                        p1Charge.value = 0;
-                    }
-                    if (e.code === 'ShiftRight') attemptHit('dink', 1, 0);
-
-                    // 2인용 2P (좌측 Shift)
-                    if (e.code === 'ShiftLeft' && !p2Charge.active) {
-                        p2Charge.active = true;
-                        p2Charge.value = 0;
-                    }
-                    if (e.code === 'KeyZ' || k === 'z') attemptHit('dink', 2, 0);
-                }
-            }
-        });
-
-        window.addEventListener('keyup', (e) => {
-            const k = e.key.toLowerCase();
-            if (k === 'w') keys.w = false;
-            if (k === 'a') keys.a = false;
-            if (k === 's') keys.s = false;
-            if (k === 'd') keys.d = false;
-            if (e.code === 'ArrowUp') keys.up = false;
-            if (e.code === 'ArrowLeft') keys.left = false;
-            if (e.code === 'ArrowDown') keys.down = false;
-            if (e.code === 'ArrowRight') keys.right = false;
-
-            if (state === 'playing' && !isScoring) {
-                // 1P 키 해제 시 타격 실행
-                if (gamePlayers === '1p' && e.code === 'Space' && p1Charge.active) {
-                    const power = p1Charge.value;
-                    p1Charge.active = false;
-                    p1Charge.value = 0;
-                    attemptHit('drive', 1, power);
-                } else if (gamePlayers === '2p') {
-                    if ((e.code === 'Slash' || e.key === '/' || e.code === 'Space') && p1Charge.active) {
-                        const power = p1Charge.value;
-                        p1Charge.active = false;
-                        p1Charge.value = 0;
-                        attemptHit('drive', 1, power);
-                    }
-                    if (e.code === 'ShiftLeft' && p2Charge.active) {
-                        const power = p2Charge.value;
-                        p2Charge.active = false;
-                        p2Charge.value = 0;
-                        attemptHit('drive', 2, power);
-                    }
-                }
-            }
-        });
-
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            scale = Math.min(canvas.width / LOGICAL_WIDTH, canvas.height / LOGICAL_HEIGHT);
-            offsetX = (canvas.width - (LOGICAL_WIDTH * scale)) / 2;
-            offsetY = (canvas.height - (LOGICAL_HEIGHT * scale)) / 2;
-        });
-        window.dispatchEvent(new Event('resize'));
-
-        function selectPlayers(players) {
-            initAudio();
-            gamePlayers = players;
-            startScreen.classList.add('hidden');
-            ruleSelectScreen.classList.remove('hidden');
-            
-            if (players === '1p') {
-                playerModeSubtext.innerText = `1인용 (vs CPU) - ${DIFFICULTY_SETTINGS[cpuDifficulty].label}`;
-                difficultyContainer.classList.remove('hidden');
-                matchP2Label.innerText = 'CPU';
-            } else {
-                playerModeSubtext.innerText = '2인용 (1P vs 2P)';
-                difficultyContainer.classList.add('hidden');
-                matchP2Label.innerText = '2P';
-            }
-        }
-
-        function backToPlayerSelect() {
-            ruleSelectScreen.classList.add('hidden');
-            startScreen.classList.remove('hidden');
-        }
-
-        function setDifficulty(diff) {
-            cpuDifficulty = diff;
-            const btnEasy = document.getElementById('diffEasyBtn');
-            const btnNormal = document.getElementById('diffNormalBtn');
-            const btnHard = document.getElementById('diffHardBtn');
-
-            [btnEasy, btnNormal, btnHard].forEach(b => {
-                b.className = "diff-btn flex-1 py-2 px-1 rounded-xl text-xs font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all border border-slate-600";
-            });
-
-            if (diff === 'easy') btnEasy.className = "diff-btn flex-1 py-2 px-1 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow transition-all border border-emerald-400";
-            if (diff === 'normal') btnNormal.className = "diff-btn flex-1 py-2 px-1 rounded-xl text-xs font-bold bg-blue-600 text-white shadow transition-all border border-blue-400";
-            if (diff === 'hard') btnHard.className = "diff-btn flex-1 py-2 px-1 rounded-xl text-xs font-bold bg-rose-600 text-white shadow transition-all border border-rose-400";
-
-            if (gamePlayers === '1p') {
-                playerModeSubtext.innerText = `1인용 (vs CPU) - ${DIFFICULTY_SETTINGS[cpuDifficulty].label}`;
-            }
-        }
-
-        function showFaultBanner(title, reason) {
-            faultTypeTitle.innerText = title;
-            faultReasonText.innerText = reason;
-            faultModal.classList.remove('hidden');
-            if (faultTimer) clearTimeout(faultTimer);
-            faultTimer = setTimeout(() => {
-                faultModal.classList.add('hidden');
-            }, 3200);
-        }
-
-        function hideFaultBanner() {
-            faultModal.classList.add('hidden');
-        }
-
-        function startGame(rule) {
-            initAudio();
-            hideFaultBanner();
-            gameRule = rule;
-            score = 0;
-            p1Score = 0;
-            p2Score = 0;
-            currentServer = 1;
-            isScoring = false;
-            rallyShotCount = 0;
-
-            scoreDisplay.innerText = '0';
-            p1MatchScore.innerText = '0';
-            p2MatchScore.innerText = '0';
-
-            ruleSelectScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            startScreen.classList.add('hidden');
-            hud.classList.remove('hidden');
-
-            if (gameRule === 'rally') {
-                rallyHud.classList.remove('hidden');
-                matchHud.classList.add('hidden');
-            } else {
-                rallyHud.classList.add('hidden');
-                matchHud.classList.remove('hidden');
-            }
-
-            playerPaddle.x = 300; playerPaddle.y = 910;
-            opponentPaddle.x = 300; opponentPaddle.y = 150;
-            opponentPaddle.targetX = 300; opponentPaddle.targetY = 150;
-
-            p1Charge.active = false; p1Charge.value = 0;
-            p2Charge.active = false; p2Charge.value = 0;
-
-            floatingTexts = []; particles = []; shockwaves = [];
-            screenShake = { x: 0, y: 0, time: 0, intensity: 0 };
-            state = 'playing';
-
-            if (gameRule === 'match11') {
-                prepareServe();
-            } else {
-                isServeState = true;
-                ball.x = playerPaddle.x;
-                ball.y = playerPaddle.y - 20;
-                ball.z = 10;
-                ball.startTime = 0; ball.endTime = 0;
-                addFloatingText('1P Serve!', 300, 700, '#10b981');
-            }
-
-            if (lastTime === 0) {
-                requestAnimationFrame(gameLoop);
-            }
-        }
-
-        function prepareServe() {
-            if (serveTimer) { clearTimeout(serveTimer); serveTimer = null; }
-            isScoring = false; 
-            isServeState = true;
-            rallyShotCount = 0;
-            ball.startTime = 0; ball.endTime = 0;
-
-            const serverScore = currentServer === 1 ? p1Score : p2Score;
-            const isEven = (serverScore % 2 === 0);
-
-            const sideText = isEven ? '우측 코트' : '좌측 코트';
-            const serverName = currentServer === 1 ? '1P' : (gamePlayers === '1p' ? 'CPU' : '2P');
-            serverIndicator.innerText = `${serverName} 서브 (${sideText})`;
-
-            if (currentServer === 1) {
-                playerPaddle.x = isEven ? 425 : 175;
-                playerPaddle.y = 910; // 베이스라인(900) 밖에서 서브 준비
-                opponentPaddle.x = isEven ? 175 : 425;
-                opponentPaddle.y = 150;
-                ball.x = playerPaddle.x;
-                ball.y = playerPaddle.y - 20;
-                addFloatingText(`1P 서브! (${sideText})`, playerPaddle.x, playerPaddle.y - 40, '#10b981');
-            } else {
-                opponentPaddle.x = isEven ? 175 : 425;
-                opponentPaddle.y = 90; // 베이스라인(100) 밖에서 서브 준비
-                playerPaddle.x = isEven ? 425 : 175;
-                playerPaddle.y = 850;
-                ball.x = opponentPaddle.x;
-                ball.y = opponentPaddle.y + 20;
-                addFloatingText(`${serverName} 서브! (${sideText})`, opponentPaddle.x, opponentPaddle.y + 40, '#ef4444');
-
-                if (gamePlayers === '1p') {
-                    serveTimer = setTimeout(() => {
-                        if (state === 'playing' && isServeState && currentServer === 2) {
-                            executeCpuServe(isEven);
-                        }
-                    }, 1200);
-                }
-            }
-        }
-
-        function executeCpuServe(isEven) {
-            if (!isServeState || state !== 'playing') return;
-            isServeState = false;
-            rallyShotCount = 0;
-            playSound('hit_drive');
-            opponentPaddle.swingTimer = 15;
-            ball.isPlayerTurn = true;
-            ball.bounced = false;
-            ball.startX = ball.x;
-            ball.startY = ball.y;
-
-            // CPU 서브: 상대 키친존을 확실히 넘겨 베이스라인 부근 안전 영역으로 낙하
-            const targetX = isEven ? 425 : 175; 
-            const targetY = court.bottom - 80 - Math.random() * 80; // 740 ~ 820 (키친존 590에서 멀리 이격)
-
-            ball.endX = targetX;
-            ball.endY = targetY;
-            ball.endTime = performance.now() + 1100;
-            ball.startTime = performance.now();
-            ball.heightMax1 = 70;
-
-            addFloatingText('CPU Deep Serve!', opponentPaddle.x, opponentPaddle.y + 30, '#ef4444');
-        }
-
-        function opponentHit() {
-            rallyShotCount++; // CPU 타구 시에도 랠리 카운트 정상 증가
-            playSound('hit_drive');
-            opponentPaddle.swingTimer = 15;
-            ball.isPlayerTurn = true;
-            ball.bounced = false;
-            ball.startX = ball.x;
-            ball.startY = ball.y;
-            
-            const diff = DIFFICULTY_SETTINGS[cpuDifficulty];
-            const isDink = Math.random() < diff.dinkRatio; 
-            const isPerfect = Math.random() < diff.perfectChance; 
-
-            // AI 타격 임팩트 시각 연출
-            triggerHitImpact(opponentPaddle.x, opponentPaddle.y, isDink ? 'dink' : 'drive', isPerfect ? 80 : 50, false);
-
-            let durationMin = Math.max(850, 1500 - score * 30 + diff.timeMod);
-            let durationMax = Math.max(1100, 2000 - score * 30 + diff.timeMod);
-
-            if (isPerfect) { durationMin *= 0.85; durationMax *= 0.85; }
-
-            if (isDink) {
-                ball.endX = court.left + 80 + Math.random() * (court.right - court.left - 160);
-                ball.endY = court.netY + 15 + Math.random() * (court.kitchenBottom - court.netY - 30); // 상대(하단 1P) 키친 구역 안쪽 착지
-                ball.heightMax1 = 110;
-                durationMin += 200; durationMax += 200;
-                addFloatingText(isPerfect ? '⚡ AI Perfect Dink!' : '💧 AI Dink!', opponentPaddle.x, opponentPaddle.y + 30, isPerfect ? '#8b5cf6' : '#3b82f6');
-            } else {
-                // 딥 드라이브 (키친존 훨씬 뒤 베이스라인 근처)
-                ball.endX = court.left + 60 + Math.random() * (court.right - court.left - 120);
-                ball.endY = court.kitchenBottom + 70 + Math.random() * 120; // Y = 660~780
-                ball.heightMax1 = 55;
-                addFloatingText(isPerfect ? '💥 AI Deep Drive!' : 'AI Drive!', opponentPaddle.x, opponentPaddle.y + 30, isPerfect ? '#10b981' : '#ef4444');
-            }
-            
-            ball.endTime = performance.now() + durationMin + Math.random() * (durationMax - durationMin);
-            ball.startTime = performance.now();
-        }
-
-        function attemptHit(shotType, playerType, power = 0) {
-            if (state !== 'playing' || isScoring) return;
-
-            const paddle = playerType === 1 ? playerPaddle : opponentPaddle;
-
-            // 1. 서브 실행 시점
-            if (isServeState) {
-                if (playerType !== currentServer) return; 
-
-                const serverScore = currentServer === 1 ? p1Score : p2Score;
-                const isEven = (serverScore % 2 === 0);
-
-                const isRightSide = (paddle.x >= court.midX);
-                if (gameRule === 'match11') {
-                    if ((isEven && !isRightSide) || (!isEven && isRightSide)) {
-                        const requiredText = isEven ? '오른쪽(우측)' : '왼쪽(좌측)';
-                        showFaultBanner("잘못된 서브 위치 파울!", `서버 점수가 ${serverScore}점(${isEven ? '짝수' : '홀수'})이므로 ${requiredText} 코트에서 서브해야 합니다.`);
-                        handleServeFault(playerType, "잘못된 서브 위치 파울!");
-                        return;
-                    }
-                }
-
-                isServeState = false;
-                rallyShotCount = 0; 
-
-                playSound('hit_drive');
-                paddle.swingTimer = 15;
-
-                ball.isPlayerTurn = (playerType === 2);
-                ball.bounced = false;
-                ball.startX = ball.x;
-                ball.startY = ball.y;
-
-                let landingX = isEven ? (playerType === 1 ? 175 : 425) : (playerType === 1 ? 425 : 175);
-                const serveHitOffset = ball.x - paddle.x;
-                landingX += serveHitOffset * 0.8 + (Math.random() - 0.5) * 20;
-                landingX = Math.max(court.left + 40, Math.min(court.right - 40, landingX));
-                
-                let landingY = 0;
-
-                if (playerType === 1) {
-                    // 1P 서브 (위쪽 상대 코트로) - 30% 미만 시 키친존/네트 앞 낙하 파울
-                    if (power < 30) {
-                        landingY = court.kitchenTop + 20 + (30 - power) * 3; // Y >= 430 (키친존 안쪽 -> 파울)
-                    } else if (power <= 85) {
-                        landingY = (court.kitchenTop - 30) - ((power - 30) / 55) * 200; // 380 ~ 180 (키친존 넘어 깊숙이 착지)
-                    } else if (power <= 95) {
-                        landingY = 180 - ((power - 85) / 10) * 65; // 180 ~ 115 (베이스라인 딥 착지)
-                    } else {
-                        landingY = 95 - (power - 95) * 8; // < 95 (오버차징 아웃!)
-                    }
-                    if (gamePlayers === '1p') {
-                        opponentPaddle.targetX = landingX;
-                        opponentPaddle.targetY = Math.max(120, landingY - 20);
-                    }
-                } else {
-                    // 2P 서브 (아래쪽 상대 코트로) - 30% 미만 시 키친존/네트 앞 낙하 파울
-                    if (power < 30) {
-                        landingY = court.kitchenBottom - 20 - (30 - power) * 3; // Y <= 570 (키친존 안쪽 -> 파울)
-                    } else if (power <= 85) {
-                        landingY = (court.kitchenBottom + 30) + ((power - 30) / 55) * 200; // 620 ~ 820 (키친존 넘어 깊숙이 착지)
-                    } else if (power <= 95) {
-                        landingY = 820 + ((power - 85) / 10) * 65; // 820 ~ 885 (베이스라인 딥 착지)
-                    } else {
-                        landingY = 905 + (power - 95) * 8; // > 905 (오버차징 아웃!)
-                    }
-                }
-
-                ball.endX = landingX;
-                ball.endY = landingY;
-                ball.endTime = performance.now() + 1100;
-                ball.startTime = performance.now();
-                ball.heightMax1 = 70;
-
-                const powText = power > 95 ? '🔥 Overcharge!' : (power < 30 ? '⚠️ Undercharged!' : (power >= 75 ? '⚡ Max Power!' : `Power ${Math.round(power)}%`));
-                addFloatingText(`${playerType === 1 ? '1P' : '2P'} Serve (${powText})`, ball.x, ball.y - 30, power < 30 || power > 95 ? '#ef4444' : '#10b981');
-                
-                // 서브 타격 임팩트 연출
-                triggerHitImpact(ball.x, ball.y, 'drive', power, false);
-                return;
-            }
-
-            // 일반 랠리 턴 검증
-            if (playerType === 1 && !ball.isPlayerTurn) return;
-            if (playerType === 2 && ball.isPlayerTurn) return;
-
-            initAudio();
-            paddle.swingTimer = 15;
-
-            const now = performance.now();
-            let isVolley = false;
-            let timingText = '';
-            let timingColor = '';
-            let scoreAdd = 0;
-
-            const ballInCourt = playerType === 1 ? (ball.y > court.netY) : (ball.y < court.netY);
-
-            // 2. 노바운드 발리 타격 판정
-            if (!ball.bounced && ballInCourt) {
-                const currentDist = Math.hypot(paddle.x - ball.x, paddle.y - ball.y);
-
-                if (currentDist <= paddle.hitRadius) {
-                    if (rallyShotCount < 2) {
-                        const ruleText = (rallyShotCount === 0) 
-                            ? "서브 리턴은 반드시 1회 바운드된 후 쳐야 합니다!" 
-                            : "서브 리턴된 공은 서버 코트에 1회 바운드된 후 쳐야 합니다!";
-                        showFaultBanner("투 바운스 규칙 위반!", ruleText);
-                        handlePointLoss(playerType, "투 바운스 규칙 위반!");
-                        return;
-                    }
-
-                    const isKitchenFault = playerType === 1 
-                        ? (paddle.y <= court.kitchenBottom + 10) 
-                        : (paddle.y >= court.kitchenTop - 10);
-
-                    if (isKitchenFault) { 
-                        showFaultBanner("키친 존 발리 반칙!", "논발리 존(키친) 안에서는 바운드 없이 발리 공격을 할 수 없습니다.");
-                        handlePointLoss(playerType, "키친 구역 발리 반칙!");
-                        return;
-                    } else {
-                        isVolley = true;
-                        timingText = 'Volley!';
-                        timingColor = '#8b5cf6';
-                        scoreAdd = (shotType === 'dink' ? 3 : 2);
-                    }
-                }
-            }
-
-            if (!isVolley) {
-                const distance = Math.hypot(paddle.x - ball.x, paddle.y - ball.y);
-
-                if (distance > paddle.hitRadius) {
-                    showFaultBanner("헛스윙 실책!", "공과의 거리가 너무 멀어 스트로크하지 못했습니다.");
-                    handlePointLoss(playerType, "거리 부족 헛스윙!");
-                    return; 
-                }
-
-                const timeDiff = ball.endTime - now;
-                const absDiff = Math.abs(timeDiff);
-
-                // Perfect 판정: 110ms -> 180ms로 확대
-                // Good 판정: 260ms -> 400ms로 확대
-                // Early/Late 통과 허용 범위: 420ms -> 650ms로 대폭 완화
-                if (absDiff <= 180) { timingText = 'Perfect!'; timingColor = '#10b981'; scoreAdd = (shotType==='dink'?3:2); } 
-                else if (absDiff <= 400) { timingText = 'Good'; timingColor = '#3b82f6'; scoreAdd = 1; } 
-                else if (absDiff <= 650) { timingText = timeDiff > 0 ? 'Early' : 'Late'; timingColor = '#f59e0b'; scoreAdd = 0; } 
-                else {
-                    showFaultBanner("타이밍 실책!", timeDiff > 0 ? "공이 오기도 전에 너무 일찍 쳤습니다." : "공이 떨어진 후 너무 늦게 쳤습니다.");
-                    handlePointLoss(playerType, "타이밍 실책!");
-                    return;
-                }
-            }
-
-            const hitOffset = ball.x - paddle.x; 
-            let targetX = court.midX + hitOffset * 3.8 + (Math.random() - 0.5) * 25;
-            targetX = Math.max(court.left + 50, Math.min(court.right - 50, targetX));
-
-            let dirSymbol = Math.abs(hitOffset) < 12 ? "⬇️ Line" : (hitOffset > 0 ? "↘️ Cross" : "↙️ Cross");
-
-            rallyShotCount++; 
-            playSound(shotType === 'dink' ? 'hit_dink' : 'hit_drive');
-            
-            // 🎯 샷 종류 및 강도에 따른 차별화된 타격 임팩트 발생!
-            triggerHitImpact(ball.x, ball.y, shotType, power, isVolley);
-            
-            if (playerType === 1 && gamePlayers === '1p' && gameRule === 'rally') {
-                score += scoreAdd;
-                scoreDisplay.innerText = score;
-            }
-            
-            ball.isPlayerTurn = (playerType === 2);
-            ball.bounced = false;
-            ball.startX = ball.x;
-            ball.startY = ball.y;
-            
-            if (shotType === 'dink') {
-                let dinkTargetX = court.midX + hitOffset * 2.2 + (Math.random() - 0.5) * 20;
-                dinkTargetX = Math.max(court.left + 70, Math.min(court.right - 70, dinkTargetX));
-
-                ball.endX = dinkTargetX;
-                if (playerType === 1) {
-                    ball.endY = court.kitchenTop - 15 - Math.random() * 30; // 상대 키친 라인 앞쪽 착지
-                } else {
-                    ball.endY = court.kitchenBottom + 15 + Math.random() * 30;
-                }
-                ball.endTime = performance.now() + 1350;
-                ball.heightMax1 = 110;
-                addFloatingText(`💧 Dink ${dirSymbol}`, ball.x, ball.y - 35, timingColor);
-            } else {
-                let landingY = 0;
-                if (playerType === 1) {
-                    if (power < 30) landingY = court.kitchenTop + 15 + (30 - power) * 3;
-                    else if (power <= 85) landingY = (court.kitchenTop - 30) - ((power - 30) / 55) * 210;
-                    else if (power <= 95) landingY = 170 - ((power - 85) / 10) * 55;
-                    else landingY = 110 - (power - 95) * 7;
-                } else {
-                    if (power < 30) landingY = court.kitchenBottom - 15 - (30 - power) * 3;
-                    else if (power <= 85) landingY = (court.kitchenBottom + 30) + ((power - 30) / 55) * 210;
-                    else if (power <= 95) landingY = 830 + ((power - 85) / 10) * 55;
-                    else landingY = 890 + (power - 95) * 7;
-                }
-
-                ball.endX = targetX;
-                ball.endY = landingY;
-                ball.endTime = performance.now() + (timingText === 'Perfect!' ? 750 : 920);
-                ball.heightMax1 = 50;
-
-                const powLabel = power > 95 ? '🔥 Out!' : (power < 30 ? '⚠️ Short' : `${Math.round(power)}%`);
-                addFloatingText(`💥 Drive ${dirSymbol} (${powLabel})`, ball.x, ball.y - 35, timingColor);
-            }
-
-            if (playerType === 1 && gamePlayers === '1p') {
-                opponentPaddle.targetX = ball.endX;
-                opponentPaddle.targetY = Math.max(court.top + 20, ball.endY - 30);
-            }
-            
-            ball.startTime = performance.now();
-        }
-
-        function handleServeFault(serverPlayer, reason) {
-            if (isScoring) return;
-            isScoring = true;
-
-            ball.startTime = 0; ball.endTime = 0;
-            playSound('whistle');
-
-            if (gameRule === 'rally') {
-                gameOver("게임 종료", reason);
-            } else {
-                // 단식 정식 규칙: 서브 파울 시 상대에게 득점을 주지 않고 서브권만 넘어감 (Side-Out)
-                const nextServer = serverPlayer === 1 ? 2 : 1;
-                currentServer = nextServer;
-
-                addFloatingText('SIDE OUT! (서브권 이양)', 300, 500, '#f59e0b');
-
-                setTimeout(() => {
-                    if (state === 'playing') {
-                        prepareServe();
-                    }
-                }, 1800);
-            }
-        }
-
-        function handlePointLoss(failingPlayer, reason) {
-            if (isScoring) return;
-            isScoring = true;
-
-            ball.startTime = 0; ball.endTime = 0;
-
-            if (gameRule === 'rally') {
-                playSound('fault');
-                if (gamePlayers === '2p') {
-                    gameOver(failingPlayer === 1 ? `2P 승리!` : `1P 승리!`, reason);
-                } else {
-                    gameOver("게임 종료", reason);
-                }
-            } else {
-                const winner = failingPlayer === 1 ? 2 : 1;
-
-                // 피클볼 정식 사이드아웃(Side-Out) 규정: 서버가 랠리에서 승리해야 1점 득점, 리시버 승리 시 서브권만 이양
-                if (winner === currentServer) {
-                    playSound('point');
-                    if (winner === 1) {
-                        p1Score++;
-                        p1MatchScore.innerText = p1Score;
-                        addFloatingText('1P 득점! +1', 300, 700, '#3b82f6');
-                    } else {
-                        p2Score++;
-                        p2MatchScore.innerText = p2Score;
-                        addFloatingText(`${gamePlayers === '1p' ? 'CPU' : '2P'} 득점! +1`, 300, 300, '#ef4444');
-                    }
-                } else {
-                    playSound('fault');
-                    currentServer = winner;
-                    const nextServerName = winner === 1 ? '1P' : (gamePlayers === '1p' ? 'CPU' : '2P');
-                    addFloatingText(`SIDE OUT! (${nextServerName} 서브권)`, 300, 500, '#f59e0b');
-                }
-
-                const isDeuce = p1Score >= 10 && p2Score >= 10;
-                const scoreDiff = Math.abs(p1Score - p2Score);
-
-                if ((!isDeuce && (p1Score >= 11 || p2Score >= 11)) || (isDeuce && scoreDiff >= 2)) {
-                    const winText = p1Score > p2Score ? "1P 매치 승리! 🎉" : (gamePlayers === '1p' ? "CPU 매치 승리!" : "2P 매치 승리! 🎉");
-                    gameOver(winText, reason);
-                } else {
-                    if (isDeuce && scoreDiff === 0) {
-                        addFloatingText('DEUCE (2점 차 승리)', 300, 500, '#f59e0b');
-                    }
-                    setTimeout(() => {
-                        if (state === 'playing') {
-                            prepareServe();
-                        }
-                    }, 1800);
-                }
-            }
-        }
-
-        function gameOver(title = "게임 종료", detailReason = "") {
-            state = 'gameover';
-            if (serveTimer) { clearTimeout(serveTimer); serveTimer = null; }
-            
-            hud.classList.add('hidden');
-            gameOverScreen.classList.remove('hidden');
-            document.getElementById('gameOverTitle').innerText = title;
-
-            if (gameRule === 'rally') {
-                const scoreText = gamePlayers === '1p' ? `최종 점수: ${score}` : `최종 랠리 기록 완료!`;
-                document.getElementById('gameOverScore').innerText = `${scoreText}\n[실점 사유] ${detailReason}`;
-                if (gamePlayers === '1p' && score > bestScore) {
-                    bestScore = score;
-                    localStorage.setItem('pickleball_pro_best', bestScore);
-                    bestScoreDisplay.innerText = bestScore;
-                }
-            } else {
-                document.getElementById('gameOverScore').innerText = `최종 스코어  [ 1P ]  ${p1Score} : ${p2Score}  [ ${gamePlayers==='1p'?'CPU':'2P'} ]\n[마지막 실점] ${detailReason}`;
-            }
-        }
-
-        function goHome() {
-            state = 'menu';
-            if (serveTimer) { clearTimeout(serveTimer); serveTimer = null; }
-            isScoring = false;
-            hideFaultBanner();
-            hud.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            ruleSelectScreen.classList.add('hidden');
-            startScreen.classList.remove('hidden');
-            ball.startTime = 0; ball.endTime = 0;
-        }
-
-        function update(now) {
-            if (state !== 'playing') return;
-
-            const dt = 16.6; 
-
-            // 화면 흔들림 감쇄
-            if (screenShake.time > 0) {
-                screenShake.time--;
-                screenShake.x = (Math.random() - 0.5) * screenShake.intensity;
-                screenShake.y = (Math.random() - 0.5) * screenShake.intensity;
-            } else {
-                screenShake.x = 0;
-                screenShake.y = 0;
-            }
-
-            if (p1Charge.active) {
-                p1Charge.value = Math.min(100, p1Charge.value + dt * 0.11);
-            }
-            if (p2Charge.active) {
-                p2Charge.value = Math.min(100, p2Charge.value + dt * 0.11);
-            }
-
-            if (playerPaddle.swingTimer > 0) playerPaddle.swingTimer--;
-            if (opponentPaddle.swingTimer > 0) opponentPaddle.swingTimer--;
-
-            // 1P 이동
-            let p1Moving = false;
-            if (keys.up) { playerPaddle.y -= playerPaddle.speed; p1Moving = true; }
-            if (keys.down) { playerPaddle.y += playerPaddle.speed; p1Moving = true; }
-            if (keys.left) { playerPaddle.x -= playerPaddle.speed; playerPaddle.facing = -1; p1Moving = true; }
-            if (keys.right) { playerPaddle.x += playerPaddle.speed; playerPaddle.facing = 1; p1Moving = true; }
-            
-            playerPaddle.moveAnim = p1Moving ? playerPaddle.moveAnim + 1 : 0;
-            playerPaddle.x = Math.max(court.left - 20, Math.min(court.right + 20, playerPaddle.x));
-            
-            // 서브 중일 때는 엔드라인(900) 안으로 진입 금지
-            if (isServeState && currentServer === 1) {
-                playerPaddle.y = Math.max(court.bottom, Math.min(court.bottom + 80, playerPaddle.y));
-            } else {
-                playerPaddle.y = Math.max(court.netY + 10, Math.min(court.bottom + 80, playerPaddle.y));
-            }
-
-            // CPU or 2P 이동
-            if (gamePlayers === '1p') {
-                if (!isServeState && !isScoring) {
-                    let aiMoving = false;
-                    let dx = opponentPaddle.targetX - opponentPaddle.x;
-                    let dy = opponentPaddle.targetY - opponentPaddle.y;
-                    const cpuSpeed = DIFFICULTY_SETTINGS[cpuDifficulty].speed;
-                    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-                        opponentPaddle.x += dx * cpuSpeed;
-                        opponentPaddle.y += dy * cpuSpeed;
-                        opponentPaddle.facing = dx > 0 ? 1 : -1;
-                        aiMoving = true;
-                    }
-                    opponentPaddle.moveAnim = aiMoving ? opponentPaddle.moveAnim + 1 : 0;
-                    opponentPaddle.y = Math.max(court.top - 50, Math.min(court.netY - 10, opponentPaddle.y));
-                }
-            } else {
-                let p2Moving = false;
-                if (keys.w) { opponentPaddle.y -= opponentPaddle.speed; p2Moving = true; }
-                if (keys.s) { opponentPaddle.y += opponentPaddle.speed; p2Moving = true; }
-                if (keys.a) { opponentPaddle.x -= opponentPaddle.speed; opponentPaddle.facing = -1; p2Moving = true; }
-                if (keys.d) { opponentPaddle.x += opponentPaddle.speed; p2Moving = true; }
-                
-                opponentPaddle.moveAnim = p2Moving ? opponentPaddle.moveAnim + 1 : 0;
-                opponentPaddle.x = Math.max(court.left - 20, Math.min(court.right + 20, opponentPaddle.x));
-                
-                // 2P 서브 중일 때는 엔드라인(100) 안으로 진입 금지
-                if (isServeState && currentServer === 2) {
-                    opponentPaddle.y = Math.max(court.top - 50, Math.min(court.top, opponentPaddle.y));
-                } else {
-                    opponentPaddle.y = Math.max(court.top - 50, Math.min(court.netY - 10, opponentPaddle.y));
-                }
-            }
-
-            // 서브 위치 파수 및 궤적 업데이트
-            if (isServeState) {
-                if (currentServer === 1) {
-                    ball.x = playerPaddle.x;
-                    ball.y = playerPaddle.y - 20;
-                } else {
-                    ball.x = opponentPaddle.x;
-                    ball.y = opponentPaddle.y + 20;
-                }
-                ball.z = 10 + Math.sin(now * 0.005) * 5;
-            } else if (ball.startTime > 0 && !isScoring) {
-                let p = (now - ball.startTime) / (ball.endTime - ball.startTime);
-                
-                // 공 첫 바운드 및 파울 정확성 판정
-                if (p >= 1.0) {
-                    if (!ball.bounced) {
-                        ball.bounced = true;
-                        playSound('bounce');
-                        createParticles(ball.endX, ball.endY, '#d1d5db', 6);
-
-                        // 서브 착지 파울 검증 (rallyShotCount === 0 일 때)
-                        if (rallyShotCount === 0) {
-                            const servingPlayer = ball.isPlayerTurn ? 2 : 1; // 공을 친 서버
-
-                            // 1P 서브: 상대 코트는 Y < 500. 키친라인 Y = 410. endY >= 410 이면 키친 라인/존 안쪽 착지 파울!
-                            // 2P 서브: 상대 코트는 Y > 500. 키친라인 Y = 590. endY <= 590 이면 키친 라인/존 안쪽 착지 파울!
-                            const isKitchenServeFault = (servingPlayer === 1) 
-                                ? (ball.endY >= court.kitchenTop) 
-                                : (ball.endY <= court.kitchenBottom);
-
-                            const isOut = (ball.endX < court.left || ball.endX > court.right || ball.endY < court.top || ball.endY > court.bottom);
-
-                            if (isKitchenServeFault || isOut) {
-                                showFaultBanner("서브 파울! (Side-Out)", "서브 공이 상대 키친 라인/존 안쪽에 바운드되었거나 코트 밖으로 나갔습니다. (득점 없이 서브권 이양)");
-                                handleServeFault(servingPlayer, "키친 라인/존 서브 파울!");
-                                return;
-                            }
-                        } else {
-                            // 일반 스트로크 아웃 검증
-                            const isOut = (ball.endX < court.left || ball.endX > court.right || ball.endY < court.top || ball.endY > court.bottom);
-                            if (isOut) {
-                                playSound('fault');
-                                const hitter = ball.isPlayerTurn ? 2 : 1; 
-                                showFaultBanner("아웃 파울!", `${hitter === 1 ? '1P' : (gamePlayers === '1p' ? 'CPU' : '2P')}가 친 공이 코트 라인 밖으로 나갔습니다.`);
-                                handlePointLoss(hitter, "코트 밖 라인 아웃!");
-                                return;
-                            }
-                        }
-                    }
-
-                    // 수비 반응 실패 놓침 (바운드 후 여유 시간 p > 1.35 -> 1.55로 확장)
-                    if (p > 1.55) {
-                        const failingPlayer = ball.isPlayerTurn ? 1 : 2;
-                        showFaultBanner("공 놓침!", "바운드된 공을 수비하지 못하고 놓쳤습니다.");
-                        handlePointLoss(failingPlayer, "바운드 공 놓침!");
-                        return;
-                    }
-                }
-
-                // AI 자동 받아치기 (1P vs CPU)
-                if (!ball.isPlayerTurn && p >= 1.0 && gamePlayers === '1p') {
-                    const distToTarget = Math.hypot(opponentPaddle.x - ball.x, opponentPaddle.y - ball.y);
-                    const diff = DIFFICULTY_SETTINGS[cpuDifficulty];
-
-                    if (distToTarget > opponentPaddle.hitRadius + 30 || Math.random() < diff.missChance) {
-                        showFaultBanner("CPU 수비 실패!", "CPU가 공의 위치를 잡지 못하고 놓쳤습니다.");
-                        handlePointLoss(2, "CPU 타격 실패!");
-                        return;
-                    }
-
-                    ball.z = 0;
-                    createParticles(ball.x, ball.y, '#9ca3af');
-                    opponentHit();
-                    return;
-                }
-
-                // 포물선 및 진행 방향 궤적 수식 (바운드 후에도 진행 방향으로 계속 튀어나아가도록 설정)
-                const visualP = Math.min(p, 1.35);
-                ball.x = ball.startX + (ball.endX - ball.startX) * visualP;
-                ball.y = ball.startY + (ball.endY - ball.startY) * visualP;
-
-                let z = 0;
-                if (p < 1.0) {
-                    // 첫 바운드 전 큰 포물선
-                    z = ball.heightMax1 * 4 * p * (1 - p);
-                } else {
-                    // 바운드 후 진행 방향으로 튀어오르는 두 번째 곡선
-                    let bp = (p - 1.0) / 0.35;
-                    z = ball.heightMax2 * 4 * bp * (1 - bp);
-                    if (z < 0) z = 0;
-                }
-                ball.z = z;
-
-                // 네트 걸림 실시간 검증
-                if (Math.abs(ball.y - court.netY) < 15 && ball.z < 18) {
-                    playSound('fault');
-                    const hitter = ball.isPlayerTurn ? 2 : 1; 
-                    showFaultBanner("네트 걸림 파울!", "공의 높이가 낮아 네트를 넘지 못하고 걸렸습니다.");
-                    if (rallyShotCount === 0) {
-                        handleServeFault(hitter, "서브 네트 걸림!");
-                    } else {
-                        handlePointLoss(hitter, "공이 네트에 걸림!");
-                    }
-                    return;
-                }
-            }
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].x += particles[i].vx;
-                particles[i].y += particles[i].vy;
-                particles[i].life -= particles[i].decay || 0.05;
-                if (particles[i].size > 0.5 && particles[i].shrink) particles[i].size *= 0.94;
-                if (particles[i].life <= 0) particles.splice(i, 1);
-            }
-
-            // 충격파 링 애니메이션 업데이트
-            for (let i = shockwaves.length - 1; i >= 0; i--) {
-                const sw = shockwaves[i];
-                sw.radius += (sw.maxRadius - sw.radius) * 0.22;
-                sw.life -= 0.06;
-                if (sw.life <= 0) shockwaves.splice(i, 1);
-            }
-
-            for (let i = floatingTexts.length - 1; i >= 0; i--) {
-                floatingTexts[i].y -= 1.5;
-                floatingTexts[i].life -= 0.02;
-                if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
-            }
-        }
-
-        function draw(now) {
-            ctx.fillStyle = '#0b1329';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.save();
-            // 화면 흔들림(Screen Shake) 효과 반영
-            ctx.translate(offsetX + screenShake.x, offsetY + screenShake.y);
-            ctx.scale(scale, scale);
-
-            // 코트 아웃사이드 영역 (파란 마진)
-            ctx.fillStyle = '#1e3a8a';
-            ctx.fillRect(court.left - 35, court.top - 35, (court.right - court.left) + 70, (court.bottom - court.top) + 70);
-
-            // 코트 메인 영역 (더블 베이스 블루)
-            ctx.fillStyle = '#2563eb';
-            ctx.fillRect(court.left, court.top, court.right - court.left, court.bottom - court.top);
-
-            // 키친존 / 논발리존 (NVZ - 스카이블루)
-            ctx.fillStyle = '#38bdf8';
-            ctx.fillRect(court.left, court.kitchenTop, court.right - court.left, court.kitchenBottom - court.kitchenTop);
-
-            // 코트 라인 렌더링
-            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4;
-            ctx.strokeRect(court.left, court.top, court.right - court.left, court.bottom - court.top);
-            
-            // 센터라인 (서비스 라인)
-            ctx.beginPath();
-            ctx.moveTo(court.midX, court.top); ctx.lineTo(court.midX, court.kitchenTop);
-            ctx.moveTo(court.midX, court.kitchenBottom); ctx.lineTo(court.midX, court.bottom);
-            ctx.stroke();
-
-            // 키친 라인 (NVZ 라인 - 서브 시 절대 닿으면 안 됨)
-            ctx.strokeStyle = '#facc15'; ctx.lineWidth = 5; // 키친 라인은 황금색 강조
-            ctx.beginPath();
-            ctx.moveTo(court.left, court.kitchenTop); ctx.lineTo(court.right, court.kitchenTop);
-            ctx.moveTo(court.left, court.kitchenBottom); ctx.lineTo(court.right, court.kitchenBottom);
-            ctx.stroke();
-
-            // 코트 라인 명칭
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.font = 'bold 11px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText("NON-VOLLEY ZONE (KITCHEN)", court.midX, court.kitchenTop + 30);
-            ctx.fillText("NON-VOLLEY ZONE (KITCHEN)", court.midX, court.kitchenBottom - 20);
-
-            // 네트
-            ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 6; ctx.setLineDash([10, 6]);
-            ctx.beginPath(); ctx.moveTo(court.left - 25, court.netY); ctx.lineTo(court.right + 25, court.netY); ctx.stroke();
-            ctx.setLineDash([]);
-
-            // 히트 가이드 레인지 원
-            if (state === 'playing') {
-                ctx.beginPath();
-                ctx.arc(playerPaddle.x, playerPaddle.y, playerPaddle.hitRadius, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.04)'; ctx.fill();
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.lineWidth = 1; ctx.stroke();
-
-                if (gamePlayers === '2p' || gameRule === 'match11') {
-                    ctx.beginPath();
-                    ctx.arc(opponentPaddle.x, opponentPaddle.y, opponentPaddle.hitRadius, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)'; ctx.fill();
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.lineWidth = 1; ctx.stroke();
-                }
-            }
-
-            // 타겟 리듬 & 바운스 링
-            if (state === 'playing' && !isServeState && ball.endTime > now) {
-                if (gamePlayers === '2p' || gameRule === 'match11' || ball.isPlayerTurn) {
-                    const targetX = ball.endX; const targetY = ball.endY;
-                    const timeLeft = ball.endTime - now;
-                    const totalTime = ball.endTime - ball.startTime;
-                    
-                    ctx.beginPath(); ctx.arc(targetX, targetY, 24, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(250, 204, 21, 0.35)'; ctx.fill();
-                    ctx.strokeStyle = '#facc15'; ctx.lineWidth = 2; ctx.stroke();
-
-                    if (timeLeft > 0) {
-                        const ratio = timeLeft / totalTime;
-                        const ringRadius = 24 + (140 * ratio);
-                        
-                        ctx.beginPath(); ctx.arc(targetX, targetY, ringRadius, 0, Math.PI * 2);
-                        if (timeLeft < 110) { ctx.strokeStyle = '#10b981'; ctx.lineWidth = 4; }
-                        else if (timeLeft < 260) { ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 3; }
-                        else { ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, 1 - ratio)})`; ctx.lineWidth = 2; }
-                        ctx.stroke();
-                    }
-                }
-            }
-
-            // 공 그림자
-            if (state === 'playing') {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                ctx.beginPath();
-                const shadowScale = Math.max(0.2, 1 - (ball.z / 100));
-                ctx.ellipse(ball.x, ball.y, 12 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // 캐릭터 및 파워 차징 게이지 바 렌더링
-            drawCharacter(opponentPaddle, '#ef4444', true, p2Charge);
-            drawCharacter(playerPaddle, '#10b981', false, p1Charge);
-
-            // 피클볼 공 (특유의 구멍 그래픽)
-            if (state === 'playing') {
-                const ballDrawY = ball.y - ball.z;
-                ctx.fillStyle = '#fef08a';
-                ctx.beginPath(); ctx.arc(ball.x, ballDrawY, 10, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = 1.5; ctx.stroke();
-                
-                ctx.fillStyle = '#ca8a04';
-                for(let i=0; i<3; i++) {
-                    ctx.beginPath(); ctx.arc(ball.x - 3 + (i*3), ballDrawY - 3 + (i%2)*4, 1.5, 0, Math.PI*2); ctx.fill();
-                }
-            }
-
-            // 충격파 링(Shockwaves) 렌더링
-            shockwaves.forEach(sw => {
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, sw.life);
-                ctx.strokeStyle = sw.color;
-                ctx.lineWidth = sw.width;
-                ctx.beginPath();
-                ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.restore();
-            });
-
-            // 파티클 및 플로팅 텍스트
-            particles.forEach(p => {
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, p.life);
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                if (p.shape === 'star') {
-                    // 발리 타격 특수 별/십자 스파크 파티클
-                    ctx.rect(p.x - p.size, p.y - p.size/4, p.size*2, p.size/2);
-                    ctx.rect(p.x - p.size/4, p.y - p.size, p.size/2, p.size*2);
-                } else {
-                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                }
-                ctx.fill();
-                ctx.restore();
-            });
-
-            ctx.textAlign = 'center';
-            floatingTexts.forEach(ft => {
-                ctx.globalAlpha = ft.life; ctx.fillStyle = ft.color;
-                ctx.font = 'bold 24px Inter, sans-serif';
-                ctx.strokeStyle = '#000000'; ctx.lineWidth = 4;
-                ctx.strokeText(ft.text, ft.x, ft.y);
-                ctx.fillText(ft.text, ft.x, ft.y);
-            });
-            ctx.globalAlpha = 1.0;
-
-            ctx.restore();
-        }
-
-        function drawCharacter(p, color, isTop, chargeObj) {
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            
-            let bob = (p.moveAnim > 0) ? Math.sin(p.moveAnim * 0.3) * 4 : 0;
-            
-            // 바닥 그림자
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            ctx.beginPath();
-            ctx.ellipse(0, 15, 20, 8, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // 몸통
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.roundRect(-15, -20 + bob, 30, 35, 12);
-            ctx.fill();
-
-            // 머리
-            ctx.fillStyle = '#fcd34d'; 
-            ctx.beginPath();
-            ctx.arc(0, -32 + bob, 14, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 모자
-            ctx.fillStyle = isTop ? '#b91c1c' : '#047857';
-            ctx.beginPath();
-            ctx.arc(0, -35 + bob, 14, Math.PI, 0);
-            ctx.fill();
-
-            // 팔 & 패들 스윙
-            ctx.save();
-            let shoulderX = p.facing * 12;
-            let shoulderY = -15 + bob;
-            ctx.translate(shoulderX, shoulderY);
-
-            let swingAngle = 0;
-            if (p.swingTimer > 0) {
-                let t = p.swingTimer / 15;
-                let arc = Math.PI * 0.8;
-                swingAngle = Math.sin(t * Math.PI) * arc * p.facing * (isTop ? 1 : -1);
-            } else {
-                swingAngle = (isTop ? -0.4 : 0.4) * p.facing;
-            }
-            
-            ctx.rotate(swingAngle);
-
-            ctx.strokeStyle = '#fcd34d'; ctx.lineWidth = 7; ctx.lineCap = 'round';
-            ctx.beginPath(); ctx.moveTo(0, 0);
-            let armLengthX = p.facing * 15;
-            let armLengthY = isTop ? 15 : -15;
-            ctx.lineTo(armLengthX, armLengthY);
-            ctx.stroke();
-
-            ctx.translate(armLengthX, armLengthY);
-            
-            ctx.fillStyle = '#444444';
-            ctx.fillRect(-3, isTop ? -5 : 0, 6, isTop ? 15 : -15);
-            ctx.fillStyle = isTop ? '#991b1b' : '#065f46';
-            ctx.beginPath();
-            ctx.roundRect(-15, isTop ? 10 : -25, 30, 25, 10);
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2;
-            ctx.strokeRect(-10, isTop ? 15 : -20, 20, 15);
-
-            ctx.restore();
-
-            // 🏓 고해상도 시각화 파워 차징 게이지 바 렌더링 (플레이어 머리 위)
-            if (chargeObj && chargeObj.active) {
-                const val = chargeObj.value; // 0 ~ 100
-                const barWidth = 84;
-                const barHeight = 12;
-                const barX = -barWidth / 2;
-                const barY = -72 + bob;
-
-                // 1. 게이지 외부 프레임 & 어두운 배경
-                ctx.fillStyle = 'rgba(11, 19, 41, 0.95)';
-                ctx.beginPath();
-                ctx.roundRect(barX - 3, barY - 3, barWidth + 6, barHeight + 6, 6);
-                ctx.fill();
-                ctx.strokeStyle = '#334155'; ctx.lineWidth = 2; ctx.stroke();
-
-                // 2. 3단계 구간별 세그먼트 배경 (0~30: 약함 | 31~70: 중간 | 71~100: 강함)
-                const w1 = barWidth * 0.30;
-                const w2 = barWidth * 0.40;
-                const w3 = barWidth * 0.30;
-
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.15)'; // 약함 배경
-                ctx.fillRect(barX, barY, w1, barHeight);
-                ctx.fillStyle = 'rgba(34, 197, 94, 0.15)';  // 중간 배경
-                ctx.fillRect(barX + w1, barY, w2, barHeight);
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';   // 강함 배경
-                ctx.fillRect(barX + w1 + w2, barY, w3, barHeight);
-
-                // 3. 현재 파워 채우기 (구간별 그래디언트/색상 지정)
-                let gaugeColor = '#38bdf8'; // 약함 (하늘색)
-                let stateLabel = '약함';
-                let labelColor = '#7dd3fc';
-
-                if (val > 95) {
-                    gaugeColor = '#f43f5e'; // 오버차지 (핫핑크/레드)
-                    stateLabel = '⚠️ 오버!';
-                    labelColor = '#fda4af';
-                } else if (val >= 71) {
-                    gaugeColor = '#ef4444'; // 강함 (붉은색)
-                    stateLabel = '🔥 강함';
-                    labelColor = '#fca5a5';
-                } else if (val >= 31) {
-                    gaugeColor = '#22c55e'; // 중간 (초록색)
-                    stateLabel = '⚡ 중간';
-                    labelColor = '#86efac';
-                }
-
-                const currentWidth = (barWidth * val) / 100;
-                ctx.fillStyle = gaugeColor;
-                ctx.beginPath();
-                ctx.roundRect(barX, barY, currentWidth, barHeight, 3);
-                ctx.fill();
-
-                // 4. 구간 구분 선 (30%, 70% 구분 틱 마크)
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([2, 2]);
-
-                ctx.beginPath();
-                ctx.moveTo(barX + w1, barY - 1);
-                ctx.lineTo(barX + w1, barY + barHeight + 1);
-                ctx.moveTo(barX + w1 + w2, barY - 1);
-                ctx.lineTo(barX + w1 + w2, barY + barHeight + 1);
-                ctx.stroke();
-                ctx.setLineDash([]); // 라인 대시 리셋
-
-                // 5. 직관적인 상태 및 수치 텍스트 표기
-                ctx.font = 'black 10px Inter, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillStyle = '#ffffff';
-                ctx.strokeStyle = '#0f172a';
-                ctx.lineWidth = 2.5;
-
-                const textStr = `${stateLabel} (${Math.round(val)}%)`;
-                ctx.strokeText(textStr, 0, barY - 5);
-                ctx.fillStyle = labelColor;
-                ctx.fillText(textStr, 0, barY - 5);
-            }
-
-            ctx.restore();
-        }
-
-        // 💥 샷 종류 및 강도에 따른 연출 이펙트 생성기
-        function triggerHitImpact(x, y, shotType, power, isVolley) {
-            if (isVolley) {
-                // ⚡ 발리 (Volley) : 날카로운 보라/황금빛 스파크 + 스파크 파티클 + 화면 미세 흔들림
-                shockwaves.push({ x, y, radius: 10, maxRadius: 55, color: '#a855f7', width: 4, life: 1.0 });
-                shockwaves.push({ x, y, radius: 5, maxRadius: 80, color: '#facc15', width: 2, life: 0.8 });
-                screenShake = { x: 0, y: 0, time: 6, intensity: 4 };
-
-                for (let i = 0; i < 16; i++) {
-                    const ang = Math.random() * Math.PI * 2;
-                    const spd = Math.random() * 9 + 3;
-                    particles.push({
-                        x, y,
-                        vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-                        size: Math.random() * 5 + 3,
-                        color: i % 2 === 0 ? '#a855f7' : '#facc15',
-                        life: 1.0, shape: 'star', shrink: true
-                    });
-                }
-            } else if (shotType === 'dink') {
-                // 💧 딩크 (Dink) : 정교하고 정갈한 물방울 파티클 + 소프트 블루 잔물결 충격파
-                shockwaves.push({ x, y, radius: 5, maxRadius: 40, color: '#38bdf8', width: 3, life: 1.0 });
-
-                for (let i = 0; i < 10; i++) {
-                    const ang = Math.random() * Math.PI * 2;
-                    const spd = Math.random() * 3 + 1;
-                    particles.push({
-                        x, y,
-                        vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 1,
-                        size: Math.random() * 3 + 2,
-                        color: i % 2 === 0 ? '#60a5fa' : '#38bdf8',
-                        life: 1.0, decay: 0.03, shrink: true
-                    });
-                }
-            } else {
-                // 💥 드라이브 (Drive) : 파워 수치(0~30 / 31~70 / 71~100)에 따른 차별화 연출
-                if (power <= 30) {
-                    // 약함 (0~30): 소형 충격파 + 작은 파티클
-                    shockwaves.push({ x, y, radius: 8, maxRadius: 45, color: '#38bdf8', width: 3, life: 0.8 });
-                    createParticles(x, y, '#38bdf8', 8);
-                } else if (power <= 70) {
-                    // 중간 (31~70): 에너제틱 초록 충격파 + 고속 파티클
-                    shockwaves.push({ x, y, radius: 10, maxRadius: 70, color: '#22c55e', width: 4, life: 0.9 });
-                    screenShake = { x: 0, y: 0, time: 5, intensity: 3 };
-                    createParticles(x, y, '#22c55e', 14);
-                } else {
-                    // 강함 (71~100): 거대한 화염 폭발 충격파 + 강력한 화면 흔들림(Screen Shake)!
-                    shockwaves.push({ x, y, radius: 10, maxRadius: 100, color: '#ef4444', width: 6, life: 1.0 });
-                    shockwaves.push({ x, y, radius: 5, maxRadius: 130, color: '#f97316', width: 3, life: 0.8 });
-                    screenShake = { x: 0, y: 0, time: 12, intensity: 8 }; // 강력한 화면 임팩트
-
-                    for (let i = 0; i < 22; i++) {
-                        const ang = Math.random() * Math.PI * 2;
-                        const spd = Math.random() * 11 + 4;
-                        particles.push({
-                            x, y,
-                            vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-                            size: Math.random() * 6 + 3,
-                            color: i % 3 === 0 ? '#ef4444' : (i % 3 === 1 ? '#f97316' : '#facc15'),
-                            life: 1.0, shrink: true
-                        });
-                    }
-                }
-            }
-        }
-
-        function addFloatingText(text, x, y, color) {
-            floatingTexts.push({ text, x, y, color, life: 1.0 });
-        }
-
-        function createParticles(x, y, color, count = 12) {
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
-                    size: Math.random() * 4 + 2, color: color, life: 1.0, shrink: true
-                });
-            }
-        }
-
-        function gameLoop(timestamp) {
-            if (lastTime === 0) lastTime = timestamp;
-            lastTime = timestamp;
-            update(timestamp);
-            draw(timestamp);
-            requestAnimationFrame(gameLoop);
-        }
-
-        document.getElementById('select1pBtn').addEventListener('click', () => selectPlayers('1p'));
-        document.getElementById('select2pBtn').addEventListener('click', () => selectPlayers('2p'));
-        document.getElementById('backToPlayerSelectBtn').addEventListener('click', backToPlayerSelect);
-
-        document.getElementById('diffEasyBtn').addEventListener('click', () => setDifficulty('easy'));
-        document.getElementById('diffNormalBtn').addEventListener('click', () => setDifficulty('normal'));
-        document.getElementById('diffHardBtn').addEventListener('click', () => setDifficulty('hard'));
-
-        document.getElementById('ruleRallyBtn').addEventListener('click', () => startGame('rally'));
-        document.getElementById('ruleMatchBtn').addEventListener('click', () => startGame('match11'));
-
-        document.getElementById('restartBtn').addEventListener('click', () => startGame(gameRule));
-        
-        document.getElementById('homeBtn').addEventListener('click', goHome);
-        document.getElementById('homeBtnGameOver').addEventListener('click', goHome);
-
-        draw(performance.now());
-    </script>
+<header><div><div class="brand">🏓 PICKLEBALL <b>CHAMPIONS</b></div><div class="subtitle">직접 조작하는 피클볼 · 중학교 체육 수업용 · 인터넷 연결 없이 실행</div></div><div class="topright"><span class="tag" id="headerMode">1인·2인 협동·2인 대결</span><span class="tag">2인: PC 한 키보드 · 1인: PC/태블릿</span><button class="smallbtn" id="soundBtn" aria-label="효과음 켜고 끄기">🔊 소리 켜짐</button></div></header>
+<main>
+<div class="game-layout">
+ <section class="left">
+  <div class="gamewrap" id="gameWrap"><canvas id="game" width="920" height="620" aria-label="피클볼 게임 코트"></canvas><div id="overlay" class="overlay"><div class="modal"><div id="modalIcon" class="emblem">🏓</div><h1 id="modalTitle">피클볼 챔피언스</h1><p id="modalDesc">한 컴퓨터에서 경기 방식을 선택하세요. <strong>16종 패들 도감·뽑기·강화</strong>는 세 모드에서 모두 유지됩니다.</p><div class="mode-choices" id="modeChoices" role="radiogroup" aria-label="게임 모드 선택"><label class="mode-choice"><input type="radio" name="gameMode" value="solo" checked> 🎮 1인 복식 · 나 + AI vs AI 2명</label><label class="mode-choice"><input type="radio" name="gameMode" value="coop"> 🤝 2인 협동 복식 · 학생 2명 vs AI 2명</label><label class="mode-choice"><input type="radio" name="gameMode" value="versus"> 🆚 2인 대결 단식 · 학생 1 vs 학생 2</label></div><div class="mode-guide" id="modeGuide">1인: WASD/방향키 이동, J·K·L 기술. SPACE 서브 및 다음 랠리.</div><button class="primary" id="modalGo">선택한 모드 시작 (SPACE)</button><div class="foot">키를 길게 눌렀다 떼면 파워에 따라 타격합니다.<br>11점 · 2점 차 승리 / 3·6·9점과 승리 시 뽑기권 획득</div></div></div></div>
+  <div class="decision-strip" id="decisionStrip" hidden role="status" aria-live="polite"><strong id="decisionTitle"></strong><span id="decisionDetail"></span></div>
+  <div class="statusbar"><span id="statusMain" class="mode">게임을 시작해 주세요</span><span id="statusSub" class="instruction">서브는 대각선 · 키친에서 발리 금지</span></div>
+  <div class="controls">
+   <div class="controller"><div class="ctlcaption" id="moveCaption">학생 1 이동 · WASD (1인은 방향키도 가능)</div><div class="dpad" id="dpad"><button data-dir="up" aria-label="위로 이동">▲</button><button data-dir="left" aria-label="왼쪽 이동">◀</button><button data-dir="down" aria-label="아래로 이동">▼</button><button data-dir="right" aria-label="오른쪽 이동">▶</button></div><div class="keyhint" id="moveHint">2인 모드 학생 2 이동: 방향키</div></div>
+   <div class="controller"><div class="ctlcaption" id="shotCaption">1인: J / K / L 길게 누르고 떼면 타격</div><div class="shotbuttons"><button class="shot" data-shot="dink" id="shotDink">J · 딩크</button><button class="shot active" data-shot="drive" id="shotDrive">K · 드라이브</button><button class="shot" data-shot="lob" id="shotLob">L · 로브</button></div><div class="powerbox" aria-live="off"><div class="powertop"><span id="powerText">타격 파워 · 준비</span><strong id="powerNum">0%</strong></div><div class="powertrack"><div id="powerFill" class="powerfill"></div><div class="powerideal"></div></div><div class="powerlegend"><span>약하게 · 네트 주의</span><span>적정 45~70%</span><span>강하게 · 아웃 주의</span></div></div><div class="powerbox" id="powerBox2" hidden><div class="powertop"><span id="powerText2">학생 2 · 타격 파워 준비</span><strong id="powerNum2">0%</strong></div><div class="powertrack"><div id="powerFill2" class="powerfill"></div><div class="powerideal"></div></div></div><button class="hit" id="hitBtn">⏭ SPACE · 서브 / 기본 타격 / 다음</button><div class="keyhint" id="shotHint">1인: J·K·L / SPACE 파워 충전, Q/E 서브 조준.<br>2인: 학생 1 F·G·H, 학생 2 J·K·L.<br>두 학생 모두 누르고 떼면 타격. SPACE는 다음 랠리.</div></div>
+  </div>
+  <div class="rules"><div class="rules-title">💡 게임에서 배우는 네 가지 핵심 규칙</div><div class="rule-grid"><div class="rule"><b>① 서브</b>대각선 서비스 코트로! 키친과 키친 라인에 떨어지면 폴트.</div><div class="rule"><b>② 투바운드</b>서브 리턴과 그다음 타구는 반드시 각각 한 번 바운드 후 타격.</div><div class="rule"><b>③ 키친</b>키친에 있어도 되지만, 키친 안이나 경계선을 밟은 상태에서 발리하면 폴트.</div><div class="rule" id="scoringRule"><b>④ 사이드아웃</b>복식: 첫 서버 → 두 번째 서버 → 서브권 이동. 단식: 서브권 즉시 이동.</div></div></div>
+ </section>
+ <aside class="sidebar">
+  <div class="hudtop"><div class="scoreteam mine"><div class="nam" id="ourName">🔵 우리 팀</div><div class="val" id="ourScore">0</div></div><div class="scorecenter"><div class="call" id="scoreCall">0 – 0 – 2</div><div class="tiny" id="scoreCaption">서버 점수 – 리시버 점수 – 서버 번호</div></div><div class="scoreteam opp"><div class="nam" id="theirName">🟠 상대 팀</div><div class="val" id="theirScore">0</div></div></div>
+  <div class="panel"><h2 class="ptitle">⚙️ 게임 설정</h2><p id="aiGuide" style="margin:0 0 10px;font-size:11px;color:#c4d9e8;line-height:1.5">쉬움: 코스 공격 25% · 보통 50% · 어려움 75% (빈 공간 공략, 성공은 보장되지 않음)</p><label class="field">난이도<select id="difficulty"><option value="easy">쉬움 · 연습 추천</option><option value="normal" selected>보통</option><option value="hard">어려움</option></select></label><div class="divisiontag" id="modeState">🤝 1인 복식 · 구역 분담 · AI 파트너</div><label class="field">승리 점수<select id="targetScore"><option value="11" selected>11점 · 패들 수집 경기</option></select></label><button class="secondary" id="restartBtn">↻ 점수 초기화 · 다시 시작</button></div>
+  <div class="panel"><h2 class="ptitle">📣 판정 · 득점 해설</h2><span class="pill" id="callTag">준비</span><div class="notice" id="ruleMessage">서브하는 팀의 점수를 먼저 읽습니다. 복식 경기는 <strong>0-0-2</strong>로 시작해요.</div><button class="primary" id="nextBtn" disabled>다음 랠리 ▶</button></div>
+  <div class="panel" id="collectionPanel"><h2 class="ptitle">🎒 패들 수집 · 장착</h2>
+    <div class="collect-summary"><div class="collect-icon" id="equippedIcon">🏓</div><div><b id="equippedName">학생 1 · 기본 패들</b><small id="collectionCounts">도감 0/16 · 🎟️ 뽑기권 0장</small></div></div>
+    <div class="collect-bonus">🎁 3·6·9점 또는 승리 시 뽑기권 1장! 단식에서는 <b>어느 학생이든</b> 득점하면 획득합니다.<br>같은 등급 패들 2개 합성 → 다음 등급 1개. 두 학생은 같은 도감을 공유합니다.</div>
+    <div class="reward-ribbon" id="rewardRibbon" hidden role="status"></div>
+    <button class="inventory-open" id="inventoryBtn" disabled>🎒 아이템창 (I) · 랠리 후 열기</button></div>
+  <div class="panel"><h2 class="ptitle">🧾 경기 기록</h2><ol class="log" id="log"><li>게임을 시작하면 랠리 기록이 표시됩니다.</li></ol></div>
+ </aside>
+</div>
+<div class="footer">1인 복식 / 2인 협동 복식 / 2인 단식 대결을 한 화면에서 선택합니다. 2인 모드는 한 키보드에서 P1 WASD+FGH, P2 방향키+JKL 사용. 16종 패들 수집판: 3·6·9점 및 승리 시 뽑기권 제공, 랠리 종료 후 I키 또는 아이템창 버튼으로 장비 장착과 2개 합성. 패들 효과는 시각 연출만 바뀌며 타구 파워와 승패 능력치는 바뀌지 않습니다. 수집 상태는 이 브라우저에 보관됩니다. 스타디움 복식판: 코트 양쪽 상시 점수판 · 관중 응원 · 구역 분담 복식 기본 · 모든 랠리 종료 시 구체적인 실점 원인 표시. WASD/방향키로 이동, J 딩크 · K 드라이브 · L 로브 또는 SPACE를 길게 눌러 힘을 모으고 떼면 타격합니다. 공이 선수 왼쪽에 닿으면 왼쪽으로, 오른쪽에 닿으면 오른쪽으로, 정면에 닿으면 직선으로 보냅니다(서브는 대각선 규칙 유지). 랠리 사이에는 SPACE로 바로 진행합니다. AI는 난이도별 반응속도·이동속도·판단오차·실수가 다르며 빈 공간을 겨냥한 좌우 코스 공격도 시도합니다. 바닥에 닿은 공은 수직 방향으로 튀어 오르면서 기존 수평 진행 방향으로도 계속 이동합니다. 수업용 아케이드 게임입니다. 실제 경기의 점수 흐름, 서브 위치, 서브의 대각선 착지, 투바운드와 키친 발리 금지를 학습하도록 구성했습니다. 타구 궤적·충돌·복식 파트너 움직임과 타구 궤적·네트 판정은 교육용으로 단순화했습니다.</div>
+</main>
+<div id="inventoryOverlay" class="inventory-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="inventoryTitle">
+ <div class="inventory-modal" id="inventoryModal">
+  <div class="inventory-top"><h2 id="inventoryTitle">🎒 패들 컬렉션 · 16종 도감</h2><div style="display:flex;gap:7px"><button id="jumpFusion" class="inventory-close">⚒️ 합성으로 이동</button><button id="closeInventory" class="inventory-close">✕ 닫기 (ESC)</button></div></div>
+  <p class="inventory-sub">랠리 사이에만 장착·뽑기·합성이 가능합니다. 장비는 이 브라우저의 공용 도감에 저장됩니다. 2인 모드에서는 학생별 장착을 따로 선택합니다. 같은 패들을 두 명이 동시에 쓰려면 2개가 필요합니다. 효과는 외형만 바뀝니다.</p><label id="equipTargetWrap" hidden>🎮 장착 대상 <select id="equipTarget"><option value="0">학생 1</option><option value="1">학생 2</option></select></label>
+  <div class="inventory-head-row">
+    <section class="inventory-box"><h3>🎟️ 패들 랜덤 뽑기</h3><div class="token-row"><span class="token-count" id="ticketCount">0장</span><button class="draw-btn" id="drawPaddle">🎲 패들 뽑기 1회</button></div><div id="drawResult" class="draw-result" role="status" aria-live="polite">3·6·9점과 경기 승리 보상으로 뽑기권을 얻습니다.</div><div class="inventory-sub" style="margin:5px 0 0">일반 55% · 희귀 30% · 영웅 12% · 전설 3%</div></section>
+    <section class="inventory-box"><h3>🏓 학생별 장착 패들</h3><div id="inventoryEquip" class="equip-status">기본 연습 패들</div><div id="catalogProgress" class="equip-status" style="margin-top:8px">도감 0 / 16</div></section>
+  </div>
+  <div class="collection-title">📚 전체 패들 도감 <span>불 · 얼음 · 전기 · 잔상 / 4단계</span></div>
+  <div id="collectionGrid" class="collection-grid"></div>
+  <div class="item-actions"><span id="chosenDescription" class="equip-status">획득한 패들을 선택하세요.</span><button id="equipPaddle" disabled>선택 패들 장착</button><button id="equipBasic">기본 패들 장착</button></div>
+  <section class="fuse-workshop"><h3>⚒️ 2개 합성 · 상위 등급 강화</h3><p class="fuse-tip">동일 등급의 패들 2개를 사용합니다(서로 다른 속성도 가능). 결과 속성은 <b>기준 패들</b>을 따라갑니다. 전설은 더 이상 합성할 수 없습니다.</p>
+    <div class="fuse-picks"><label>① 기준 패들<select id="fuseBase"><option value="">기준 패들 선택</option></select></label><label>② 소모할 재료<select id="fuseMaterial"><option value="">재료 패들 선택</option></select></label></div>
+    <div id="fusePreview" class="fuse-preview" role="status">같은 등급의 패들 2개가 있어야 강화할 수 있습니다.</div>
+    <button class="fuse-btn" id="fusePaddles" disabled>✨ 2개 합성해 강화</button>
+  </section>
+ </div>
+</div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id), canvas=$('game'), ctx=canvas.getContext('2d');
+const W=920,H=620,C={l:226,r:694,t:51,b:569,cx:460,net:310,kf:236,kn:384};
+const colors={our:'#73e6f4',partner:'#94a9ff',opp:'#ff957c',opp2:'#ffc985',ball:'#efff63'};
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const getDiff=()=>$('difficulty').value;
+// A floor bounce reverses the vertical velocity; the ground-plane (x,y)
+// components keep moving in the incoming direction, with some friction.
+const BOUNCE_GRAVITY=270,BOUNCE_GROUND_MOMENTUM=.68,BOUNCE_RESTITUTION=.82;
+function flightHeight(kind){return kind==='lob'?94:kind==='dink'?24:54}
+function firstBounce(b,now){
+ const flightSeconds=b.duration/1000;
+ const incomingVX=(b.to.x-b.from.x)/flightSeconds;
+ const incomingVY=(b.to.y-b.from.y)/flightSeconds;
+ const incomingVZ=-Math.PI*flightHeight(b.type)/flightSeconds;
+ b.vx=incomingVX*BOUNCE_GROUND_MOMENTUM;
+ b.vy=incomingVY*BOUNCE_GROUND_MOMENTUM;
+ b.vz=clamp(-incomingVZ*BOUNCE_RESTITUTION,90,150);
+ b.gravity=BOUNCE_GRAVITY;
+ b.phase='bounced';b.bounceCount=1;b.bouncedAt=now;
+ b.x=b.to.x;b.y=b.to.y;b.z=0;
+}
+
+// ===== Offline collectible system: 4 families x 4 levels, exactly 16 entries =====
+const PADDLE_FAMILIES=[
+ {id:'fire',label:'화염',emoji:'🔥',color:'#ff8550',names:['바미의 불씨','태양불꽃','용의 숨결','불멸의 용염']},
+ {id:'ice',label:'빙결',emoji:'❄️',color:'#80dafa',names:['서리의 조각','얼어붙은 심장','혹한의 심판','영원한 빙하']},
+ {id:'electric',label:'번개',emoji:'⚡',color:'#ffd84d',names:['스태틱의 불꽃','뇌전의 일격','폭풍의 심판','천둥신의 분노']},
+ {id:'shadow',label:'환영',emoji:'🌌',color:'#dc9aff',names:['희미한 잔영','유령 무희','환영의 춤','시공의 지배자']}
+];
+const TIER_LABEL=['일반','희귀','영웅','전설'], DRAW_CHANCE=[.55,.30,.12,.03], STORAGE_KEY='pickleball_champions_paddle_collection_v1';
+const PADDLES=PADDLE_FAMILIES.flatMap(f=>f.names.map((name,i)=>({id:f.id+'-'+(i+1),family:f.id,grade:i+1,name:name+' 패들',color:f.color,emoji:f.emoji,familyLabel:f.label})));
+const byPaddleId=id=>PADDLES.find(p=>p.id===id)||null;
+const newCollection=()=>({counts:{},discovered:[],tickets:0,equipped:null,equippedP2:null,totalDraws:0});
+function loadCollection(){
+ let data;try{data=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')}catch(e){}
+ if(!data||typeof data!=='object')return newCollection();
+ const result=newCollection();
+ for(const p of PADDLES){const count=Number(data.counts?.[p.id]);if(Number.isSafeInteger(count)&&count>0)result.counts[p.id]=Math.min(9999,count)}
+ const known=new Set(Array.isArray(data.discovered)?data.discovered.filter(id=>!!byPaddleId(id)):[]);
+ Object.keys(result.counts).forEach(id=>known.add(id));result.discovered=[...known];
+ const tickets=Number(data.tickets);if(Number.isSafeInteger(tickets)&&tickets>=0)result.tickets=Math.min(9999,tickets);
+ const total=Number(data.totalDraws);if(Number.isSafeInteger(total)&&total>=0)result.totalDraws=Math.min(99999,total);
+ if(byPaddleId(data.equipped)&&result.counts[data.equipped]>0)result.equipped=data.equipped;
+ if(byPaddleId(data.equippedP2)&&result.counts[data.equippedP2]>0)result.equippedP2=data.equippedP2;
+ if(result.equipped===result.equippedP2&&result.counts[result.equipped]<2)result.equippedP2=null;
+ return result;
+}
+let collection=loadCollection(),chosenPaddle=null,fuseBaseChoice='',fuseMaterialChoice='',inventoryOpen=false,lastInventoryFocus=null;
+let mode='solo';
+const twoPlayers=()=>mode!=='solo', isPvP=()=>mode==='versus';
+const playerName=n=>'학생 '+(n+1);
+const activeEquipTarget=()=>Number($('equipTarget').value)||0;
+function paddleForPlayer(i=0){return byPaddleId(i===0?collection.equipped:collection.equippedP2)}
+function playerActor(i){return i===0?user:mode==='coop'?partner:opp[0]}
+function playerTeam(i){return i===1&&isPvP()?1:0}
+function humanForActor(h){return h===user?0:(twoPlayers()&&h===(mode==='coop'?partner:opp[0]))?1:null}
+function equippedId(i){return i===0?collection.equipped:collection.equippedP2}
+function setEquippedId(i,id){if(i===0)collection.equipped=id;else collection.equippedP2=id}
+function repairEquip(){for(let i=0;i<2;i++){let id=equippedId(i);if(!id)continue;const uses=(equippedId(0)===id?1:0)+(equippedId(1)===id?1:0);if(countOwned(id)<uses){if(i===0&&equippedId(1)===id)collection.equippedP2=null;else setEquippedId(i,null);}}}
+
+function saveCollection(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(collection))}catch(e){/* game still works when storage is blocked */}}
+function countOwned(id){return collection.counts[id]||0}
+function addPaddle(id,num=1){collection.counts[id]=(collection.counts[id]||0)+num;if(!collection.discovered.includes(id))collection.discovered.push(id)}
+function catalogOwned(){return collection.discovered.length}
+function equippedPaddle(i=0){return paddleForPlayer(i)}
+function updateCollectionSummary(){
+ const p=equippedPaddle(0),p2=equippedPaddle(1);
+ $('equippedIcon').textContent=p?.emoji||'🏓';$('equippedIcon').style.boxShadow=p?'inset 0 0 19px '+p.color+'65':'none';
+ $('equippedName').textContent=(twoPlayers()?'학생1: ':'')+(p?.name||'기본 연습 패들')+(twoPlayers()?` / 학생2: ${p2?.name||'기본 연습 패들'}`:'');
+ $('collectionCounts').textContent=`도감 ${catalogOwned()}/16 · 🎟️ 뽑기권 ${collection.tickets}장`;
+ $('inventoryBtn').disabled=!(st.phase==='between'||st.phase==='over');
+ $('inventoryBtn').textContent=`🎒 아이템창 (I) · 뽑기권 ${collection.tickets}장`;
+ $('rewardRibbon').hidden=!st.lastReward;
+ if(st.lastReward)$('rewardRibbon').textContent=st.lastReward;
+}
+function optionsForBase(){return PADDLES.filter(p=>countOwned(p.id)>0&&p.grade<4)}
+function availableMaterials(base){
+ if(!base)return[];
+ return PADDLES.filter(p=>p.grade===base.grade&&countOwned(p.id)>=(p.id===base.id?2:1));
+}
+function refreshCollectionUI(){
+ updateCollectionSummary();if(!inventoryOpen)return;
+ $('ticketCount').textContent=collection.tickets+'장';$('drawPaddle').disabled=collection.tickets===0;
+ $('inventoryEquip').innerHTML=[0,...(twoPlayers()?[1]:[])].map(i=>{const p=equippedPaddle(i);return `<strong>${twoPlayers()?playerName(i)+' · ':''}${p?p.emoji+' '+p.name:'🏓 기본 연습 패들'}</strong>${p?' · '+TIER_LABEL[p.grade-1]:''}`}).join('<br>');
+ $('catalogProgress').textContent=`📚 누적 수집 ${catalogOwned()} / 16 · 총 뽑기 ${collection.totalDraws}회`;
+ $('collectionGrid').innerHTML=PADDLES.map(p=>{
+   const count=countOwned(p.id),seen=collection.discovered.includes(p.id),selected=chosenPaddle===p.id,equippers=[0,1].filter(i=>equippedId(i)===p.id); 
+   return `<button type="button" class="item-card tier-${p.grade} ${count?'owned':seen?'unlocked':'locked'} ${selected?'selected':''} ${equippers.length?'equipped':''}" data-paddle="${p.id}" style="--item-glow:${p.color}" ${count?'':'disabled'} aria-label="${p.name} ${count?'보유 '+count+'개':'미획득'}">
+     <span class="copy-count">${count?'×'+count:seen?'×0':'🔒'}</span><span class="tier-note" style="color:${p.color}">${p.familyLabel} · ${p.grade}단계 ${TIER_LABEL[p.grade-1]}</span>
+     <span class="item-line"><span class="element-emoji">${p.emoji}</span>${p.name}</span><span class="paddle-picture"></span><span class="card-badge">${equippers.length?'✓ '+equippers.map(i=>playerName(i)).join('·')+' 장착':selected?'선택됨':count?'선택해서 장착':seen?'도감 등록 · 보유 0':'미획득'}</span>
+   </button>`;
+ }).join('');
+ document.querySelectorAll('[data-paddle]').forEach(el=>el.addEventListener('click',()=>{chosenPaddle=el.dataset.paddle;fuseBaseChoice=(byPaddleId(chosenPaddle)?.grade<4?chosenPaddle:fuseBaseChoice);renderFuseOptions();refreshCollectionUI()}));
+ const chosen=byPaddleId(chosenPaddle);
+ $('chosenDescription').textContent=chosen&&countOwned(chosen.id)>0?`${chosen.emoji} ${chosen.name} ×${countOwned(chosen.id)} · ${TIER_LABEL[chosen.grade-1]}`:'획득한 패들을 선택하세요.';
+ $('equipPaddle').disabled=!chosen||!countOwned(chosen.id)||chosen.id===equippedId(activeEquipTarget());
+ renderFuseOptions();
+}
+function renderFuseOptions(){
+ const baseOptions=optionsForBase();
+ if(!baseOptions.some(p=>p.id===fuseBaseChoice))fuseBaseChoice=baseOptions[0]?.id||'';
+ const base=byPaddleId(fuseBaseChoice);
+ const materials=availableMaterials(base);
+ if(!materials.some(p=>p.id===fuseMaterialChoice))fuseMaterialChoice=materials[0]?.id||'';
+ const material=byPaddleId(fuseMaterialChoice);
+ $('fuseBase').innerHTML='<option value="">기준 패들 선택</option>'+baseOptions.map(p=>`<option value="${p.id}">${p.emoji} ${p.name} (×${countOwned(p.id)})</option>`).join('');
+ $('fuseBase').value=fuseBaseChoice;
+ $('fuseMaterial').innerHTML='<option value="">재료 선택</option>'+materials.map(p=>`<option value="${p.id}">${p.emoji} ${p.name} (×${countOwned(p.id)})</option>`).join('');
+ $('fuseMaterial').value=fuseMaterialChoice;
+ const ready=!!(base&&material&&base.grade===material.grade&&base.grade<4&&countOwned(base.id)>=(base.id===material.id?2:1)&&countOwned(material.id)>=(base.id===material.id?2:1));
+ $('fusePaddles').disabled=!ready;
+ if(ready){const result=byPaddleId(base.family+'-'+(base.grade+1));$('fusePreview').textContent=`${base.name} + ${material.name} → ✨ ${result.name} (${base.grade+1}단계)`}
+ else $('fusePreview').textContent='합성 가능한 동일 등급 패들 2개를 확보해 주세요.';
+}
+function openInventory(){
+ if(st.phase!=='between'&&st.phase!=='over'){hint('아이템창은 랠리 종료 후 열 수 있습니다.');return}
+ if(inventoryOpen)return;
+ inventoryOpen=true;lastInventoryFocus=document.activeElement;
+ $('inventoryOverlay').hidden=false;refreshCollectionUI();$('closeInventory').focus();
+}
+function closeInventory(){if(!inventoryOpen)return;inventoryOpen=false;$('inventoryOverlay').hidden=true;lastInventoryFocus?.focus?.()}
+function drawRandomPaddle(){
+ if(!inventoryOpen||!collection.tickets)return;
+ const r=Math.random();let grade=1,acc=0;for(let i=0;i<DRAW_CHANCE.length;i++){acc+=DRAW_CHANCE[i];if(r<acc){grade=i+1;break}}
+ const family=PADDLE_FAMILIES[Math.floor(Math.random()*PADDLE_FAMILIES.length)];
+ const paddle=byPaddleId(family.id+'-'+grade);
+ collection.tickets--;collection.totalDraws++;addPaddle(paddle.id);
+ chosenPaddle=paddle.id;fuseBaseChoice=grade<4?paddle.id:fuseBaseChoice;
+ saveCollection();refreshCollectionUI();
+ $('drawResult').textContent=`🎉 ${TIER_LABEL[grade-1]} 획득! ${paddle.emoji} ${paddle.name} (현재 ×${countOwned(paddle.id)})`;
+ tone(400+grade*150,.18,'triangle',.045);
+}
+function equipSelectedPaddle(){
+ const p=byPaddleId(chosenPaddle),i=activeEquipTarget();if(!p||!countOwned(p.id)||!inventoryOpen)return;
+ const other=equippedId(i===0?1:0);
+ if(other===p.id&&countOwned(p.id)<2){$('drawResult').textContent='⚠️ 같은 패들을 두 학생이 사용하려면 2개를 보유해야 합니다.';return}
+ setEquippedId(i,p.id);saveCollection();refreshCollectionUI();$('drawResult').textContent=`✅ ${playerName(i)}: ${p.emoji} ${p.name} 장착! 다음 랠리부터 적용됩니다.`;tone(780,.1);
+}
+function fusePaddles(){
+ if(!inventoryOpen)return;
+ const base=byPaddleId(fuseBaseChoice),material=byPaddleId(fuseMaterialChoice);
+ if(!base||!material||base.grade!==material.grade||base.grade>=4||countOwned(base.id)<(base.id===material.id?2:1)||countOwned(material.id)<(base.id===material.id?2:1))return;
+ const result=byPaddleId(base.family+'-'+(base.grade+1));
+ const previous=[collection.equipped,collection.equippedP2];
+ collection.counts[base.id]--;collection.counts[material.id]--;addPaddle(result.id);
+ // The upgrade follows the first player who had consumed equipment. Others unequip if there are insufficient copies.
+ for(let i=0;i<2;i++){if(previous[i]===base.id||previous[i]===material.id)setEquippedId(i,result.id)}
+ repairEquip();chosenPaddle=result.id;fuseBaseChoice=result.grade<4?result.id:'';fuseMaterialChoice='';
+ saveCollection();refreshCollectionUI();$('drawResult').textContent=`✨ 합성 성공! ${result.emoji} ${result.name} 탄생! 장착 슬롯도 확인해 주세요.`;
+ tone(990,.23,'triangle',.047);
+}
+function showRewardSplash(title,sub='I키 또는 오른쪽 아이템창으로 바로 이동!'){rewardSplashText=title;rewardSplashSub=sub;rewardSplashUntil=performance.now()+3200;triggerScreenShake(7,260);for(let i=0;i<32;i++)addParticle({x:C.cx+rand(-16,16),y:88+rand(-10,10),vx:rand(-180,180),vy:rand(-150,120),life:rand(.45,.9),max:.9,color:Math.random()<.5?'#fff7a8':'#e4ff62',size:4+Math.random()*5,type:Math.random()<.5?'spark':'orb',gravity:120,alpha:.9});}
+function grantDrawTicket(reason){collection.tickets++;st.lastReward=`🎟️ ${reason} · 패들 뽑기권 +1장! I키로 아이템창을 여세요.`;showRewardSplash('🎟️ 뽑기권 +1',`${reason} 보상!  I키로 바로 뽑기 가능`);saveCollection();updateCollectionSummary();}
+function rewardForScore(winner,scored,wonMatch){
+ if(winner!==0&&!isPvP())return;
+ const who=isPvP()?playerName(winner):'우리 팀',rewards=[];
+ if(scored&&st.scores[winner]>0&&st.scores[winner]%3===0){grantDrawTicket(`${who} ${st.scores[winner]}점 도달`);rewards.push(`🎟️ ${who} ${st.scores[winner]}점 보상 +1장`)}
+ if(wonMatch){grantDrawTicket(`${who} 11점 경기 승리`);rewards.push(`🏆 ${who} 승리 보상 +1장`)}
+ if(rewards.length){st.lastReward=rewards.join(' · ');saveCollection();updateCollectionSummary();tone(900,.16,'triangle',.06)}
+}
+$('inventoryBtn').addEventListener('click',openInventory);
+$('closeInventory').addEventListener('click',closeInventory);
+ $('jumpFusion').addEventListener('click',()=>{$('fusePaddles').scrollIntoView({behavior:'smooth',block:'center'});});
+$('drawPaddle').addEventListener('click',drawRandomPaddle);
+$('equipPaddle').addEventListener('click',equipSelectedPaddle);
+$('equipBasic').addEventListener('click',()=>{if(!inventoryOpen)return;const i=activeEquipTarget();setEquippedId(i,null);saveCollection();refreshCollectionUI();$('drawResult').textContent=`🏓 ${playerName(i)} 기본 연습 패들을 장착했습니다.`});
+$('equipTarget').addEventListener('change',refreshCollectionUI);
+$('fuseBase').addEventListener('change',e=>{fuseBaseChoice=e.target.value;fuseMaterialChoice='';renderFuseOptions()});
+$('fuseMaterial').addEventListener('change',e=>{fuseMaterialChoice=e.target.value;renderFuseOptions()});
+$('fusePaddles').addEventListener('click',fusePaddles);
+$('inventoryOverlay').addEventListener('click',e=>{if(e.target===$('inventoryOverlay'))closeInventory()});
+
+let ctxTime=0,audio=null,soundOn=true,held=new Set(),pressedDirs=new Set(),lastTime=0,lastSfx=0;const touchCanvas=window.matchMedia('(pointer:coarse)').matches;const canvasPointers=new Map();
+let user={x:570,y:481,speed:310,homeX:565},partner={x:350,y:481,homeX:355},opp=[{x:354,y:140,homeX:355},{x:565,y:140,homeX:565}];
+let st={},aim={x:360,y:144,manual:false},selected='drive',particles=[],toast={text:'',until:0},frame=0;
+let screenShakeUntil=0,screenShakeMag=0,rewardSplashUntil=0,rewardSplashText='',rewardSplashSub='';
+// Press-and-hold charge: 1 second fills the gauge. No timer or network needed.
+const CHARGE_MS=1000;
+let charge=null,charge2=null,canvasChargePointer=null;
+const AI_LEVEL={
+ easy:{speed:128,reaction:540,readError:48,reach:39,whiff:.16,badHit:.12,hitDelay:140,angleChance:.25,accuracy:.42,aimError:52,contactOffset:14},
+ normal:{speed:185,reaction:330,readError:27,reach:48,whiff:.075,badHit:.065,hitDelay:95,angleChance:.50,accuracy:.66,aimError:29,contactOffset:23},
+ hard:{speed:248,reaction:150,readError:12,reach:56,whiff:.025,badHit:.025,hitDelay:55,angleChance:.75,accuracy:.84,aimError:13,contactOffset:30}
+};
+function chargeFor(i){return i===0?charge:charge2}
+function powerLevel(now=performance.now(),i=0){const c=chargeFor(i);return c?clamp((now-c.since)/CHARGE_MS,0,1):0}
+function isOwnBall(i,b){if(!b)return false;if(b.toTeam!==playerTeam(i))return false;if(mode==='coop')return i===(assignedToPartner(b)?1:0);if(mode==='solo')return !assignedToPartner(b);return true}
+function isOwnServe(i){if(st.ball||st.serveTeam!==playerTeam(i))return false;if(isPvP())return true;return st.serverSlot===i}
+function setCharge(type,source='keyboard',key='',i=0){
+ if(st.phase!=='playing'||!$('overlay').classList.contains('hidden')||chargeFor(i))return false;
+ if(st.ball?!isOwnBall(i,st.ball):!isOwnServe(i))return false;
+ const data={type,source,key,since:performance.now()};if(i===0)charge=data;else charge2=data;
+ if(i===0&&selected!==type){selected=type;if(!aim.manual)setShotDefaultAim();syncShotBtns()}
+ return true;
+}
+function endCharge(source,key='',cancel=false,i=0){
+ const c=chargeFor(i);if(!c||c.source!==source||(key&&c.key!==key))return;
+ const power=powerLevel(performance.now(),i);if(i===0)charge=null;else charge2=null;
+ if(cancel||st.phase!=='playing')return;
+ attemptHit(c.type,power,i);
+}
+function resetCharge(){charge=null;charge2=null;canvasChargePointer=null}
+function refreshPower(now){
+ for(let i=0;i<(twoPlayers()?2:1);i++){
+ const c=chargeFor(i),n=Math.round(powerLevel(now,i)*100),type=c?.type;
+ $(i?'powerFill2':'powerFill').style.width=n+'%';$(i?'powerNum2':'powerNum').textContent=n+'%';
+ $(i?'powerText2':'powerText').textContent=c?`${playerName(i)} ${type==='dink'?'딩크':type==='lob'?'로브':'드라이브'} 충전 · 떼면 타격`:`${twoPlayers()?playerName(i)+' · ':''}타격 파워 · 준비`;
+ }
+ document.querySelectorAll('[data-shot]').forEach(b=>b.classList.toggle('charging',!!charge&&b.dataset.shot===charge.type));
+}
+// Convert the charge into a genuinely different landing distance (weak = net; strong = out).
+function powerTarget(hitter,target,power){
+ const factor=.44+1.03*power;
+ return{x:hitter.x+(target.x-hitter.x)*factor,y:hitter.y+(target.y-hitter.y)*factor};
+}
+// After receiving the ball, the contact position determines shot direction.
+// Left of the player -> leftward flight; right -> rightward; center -> straight.
+// The contact x-position, not the player's center, is the launch coordinate.
+function contactLaneTarget(hitter,ball,depth){
+ const offset=clamp(ball.x-hitter.x,-80,80);
+ const lean=Math.abs(offset)<7?0:offset;
+ // Target beyond the side lines is allowed: a severe angle can be out.
+ return{x:clamp(ball.x+lean*3.65,C.l-48,C.r+48),y:depth};
+}
+// AI shot planning: choose a lane deliberately, then approach the ball on the
+// appropriate side of the paddle. A later shot still uses actual contact position.
+// These are attempted angle rates, not guaranteed successful winners.
+function aiOpenLane(team){
+ const defenders=team===1?(mode==='solo'?[user,partner]:[user,partner]):(isPvP()?[opp[0]]:opp);
+ const y=team===1?C.kn+105:C.kf-105;
+ const laneXs=[C.l+38,C.r-38];
+ const gap=x=>Math.min(...defenders.map(d=>Math.hypot((x-d.x)*1.0,(y-d.y)*.55)));
+ const scores=laneXs.map(gap);
+ // Mostly prefer open space, but keep occasional surprise cross-court returns.
+ const preferred=scores[0]>scores[1]?0:1;
+ const side=Math.random()<.84?(preferred===0?-1:1):(preferred===0?1:-1);
+ return side;
+}
+function chooseAIAttackPlan(team,config){
+ const angle=Math.random()<config.angleChance;
+ const side=angle?aiOpenLane(team):(Math.random()<.5?-1:1);
+ const depth=team===1?(Math.random()<.28?C.kn+rand(23,65):C.b-rand(34,92)):(Math.random()<.27?C.kf-rand(23,65):C.t+rand(39,92));
+ const targetX=angle?(side<0?C.l+rand(28,73):C.r-rand(28,73)):C.cx+rand(-64,64);
+ return {angle,side,targetX,depth,contactOffset:angle?config.contactOffset:0};
+}
+function aiDirectionalTarget(hitter,ball,attack,config){
+ const phys=contactLaneTarget(hitter,ball,attack.depth);
+ const rushed=Math.max(0,dist(hitter,ball)-24)/Math.max(65,config.reach||78);
+ const pressure=1+Math.max(0,ball.power-.67)*.95+rushed*.55;
+ const error=config.aimError*pressure;
+ // Keep contact-angle physics significant. Skilled AIs also use deliberate lane
+ // placement rather than losing their target to the contact rule.
+ const weight=attack.angle?config.accuracy:.15;
+ const tx=phys.x*(1-weight)+attack.targetX*weight+rand(-error,error);
+ const ty=attack.depth+rand(-error*.55,error*.55);
+ return{x:clamp(tx,C.l-88,C.r+88),y:ty};
+}
+function planAI(ball){
+ const cfg=AI_LEVEL[getDiff()],edge=Math.abs(ball.to.x-C.cx)/((C.r-C.l)/2);
+ const attack=chooseAIAttackPlan(1,cfg);
+ ball.aiPlan={readyAt:ball.at+cfg.reaction+rand(-50,55),readX:ball.to.x+rand(-cfg.readError,cfg.readError),readY:ball.to.y+rand(-cfg.readError,cfg.readError),
+ whiff:Math.random()<cfg.whiff+edge*.07+(ball.power>.78?.06:0),
+ badHit:Math.random()<cfg.badHit+edge*.035+(attack.angle?(getDiff()==='easy'?.05:getDiff()==='normal'?.03:.015):0),
+ actor:assignedOpp(ball),attack};
+}
+function aiFaultTarget(){return Math.random()<.5?{x:rand(C.l+80,C.r-80),y:rand(C.kf+12,C.net-10)}:{x:Math.random()<.5?C.l-rand(35,90):C.r+rand(35,90),y:rand(C.kn+60,C.b-45)}}
+
+const rules={serve:'대각선 서비스 코트에 서브하고, 키친(키친 라인 포함)을 피하세요.',two:'서브 받은 팀과 서브한 팀은 각각 한 번 바운드 후 첫 타구를 쳐야 합니다.',kitchen:'키친 안에 들어가는 것 자체는 폴트가 아니며, 그곳에서 발리하면 폴트입니다.',score:'서브한 팀만 득점합니다. 두 번째 서버가 지면 사이드아웃입니다.'};
+function resetState(){resetCharge();st={phase:'intro',scores:[0,0],serveTeam:0,serverNum:isPvP()?1:2,serverSlot:0,shotIndex:0,ball:null,rally:0,at:0,autoServeAt:0,toastBlock:0,message:isPvP()?'단식 경기는 0-0에서 시작합니다.':'처음 서브는 0-0-2로 시작합니다.',sub:'0점(짝수)은 오른쪽 서비스 코트에서 서브합니다.',winner:null,logs:[],revealAt:0,lastDecision:null,lastReward:'',cheerUntil:0,cheerTeam:null,pointTeam:null,pointFlashUntil:0};rewardSplashUntil=0;rewardSplashText='';rewardSplashSub='';aim.manual=false;selected='drive';syncShotBtns();prepPlayers();updateUI()}
+function rightSlot(t){return st.scores[t]%2===0?0:1}
+function slotX(t,slot){const isRight=(slot===0)===(st.scores[t]%2===0);return C.cx+(t===0?(isRight?112:-112):(isRight?-112:112))}
+function serverX(t){return slotX(t,st.serverSlot)}
+function courtY(t){return t===0?485:135}
+function prepPlayers(){user.x=slotX(0,0);user.y=479;partner.x=slotX(0,1);partner.y=479;opp.forEach((p,i)=>{p.x=slotX(1,i);p.y=141});user.homeX=user.x;partner.homeX=partner.x;opp.forEach(p=>p.homeX=p.x);if(st.phase!=='intro'&&st.serveTeam===0){if(st.serverSlot===0){user.x=serverX(0);user.y=C.b+13}else{partner.x=serverX(0);partner.y=C.b+13}}if(st.phase!=='intro'&&st.serveTeam===1){const server=opp[isPvP()?0:st.serverSlot];server.x=serverX(1);server.y=C.t-11}}
+function scoreText(){return `${st.scores[st.serveTeam]}-${st.scores[1-st.serveTeam]}${isPvP()?'':'-'+st.serverNum}` }
+function setMessage(tag,html,sub){$('callTag').textContent=tag;$('ruleMessage').innerHTML=html;st.message=tag;st.sub=sub||'';updateStatus()}
+function logLine(line){st.logs.unshift(line);st.logs=st.logs.slice(0,9);$('log').innerHTML=st.logs.map(s=>'<li>'+s+'</li>').join('')}
+function updateStatus(){$('statusMain').textContent=st.message||'경기 준비';$('statusSub').textContent=st.sub||''}
+function updateUI(){
+ $('ourScore').textContent=st.scores[0];$('theirScore').textContent=st.scores[1];$('scoreCall').textContent=scoreText().replace(/-/g,' – ');
+ $('ourName').textContent=isPvP()?'🔵 학생 1':'🔵 우리 팀';$('theirName').textContent=isPvP()?'🟠 학생 2':'🟠 상대 AI';
+ $('scoreCaption').textContent=isPvP()?'단식: 서버 점수 – 리시버 점수':'복식: 서버 점수 – 리시버 점수 – 서버 번호';
+ $('headerMode').textContent=mode==='solo'?'1인 복식':mode==='coop'?'2인 협동 복식':'2인 대결 단식';
+ $('modeState').textContent=mode==='solo'?'🤝 1인 복식 · AI 파트너와 구역 분담':mode==='coop'?'🤝 2인 협동 · 학생 두 명의 구역 분담':'🆚 2인 단식 · 학생 대 학생, AI 없음';
+ $('difficulty').disabled=isPvP();$('aiGuide').textContent=isPvP()?'2인 단식 대결에서는 AI 난이도를 사용하지 않습니다.':'AI 쉬움: 코스 공격 25% · 보통 50% · 어려움 75% (성공은 보장되지 않음)';
+ $('shotHint').innerHTML=twoPlayers()?'학생 1: WASD 이동 + F 딩크 / G 드라이브 / H 로브<br>학생 2: 방향키 이동 + J 딩크 / K 드라이브 / L 로브<br>두 학생 모두 기술 키를 누르고 떼면 타격 · SPACE는 다음 랠리':'누르는 시간(최대 1초) = 비거리·속도<br>SPACE도 눌렀다 떼면 서브/드라이브 · Q/E 서브 좌우 조준';
+ $('scoringRule').innerHTML=isPvP()?'<b>④ 사이드아웃 · 단식</b>서브한 선수만 득점. 리시버가 랠리를 이기면 서브권이 즉시 넘어갑니다.':'<b>④ 사이드아웃 · 복식</b>첫 서버 → 두 번째 서버 → 서브권 이동. 첫 서브는 0-0-2.';
+ $('powerBox2').hidden=!twoPlayers();$('equipTargetWrap').hidden=!twoPlayers();
+ $('moveCaption').textContent=twoPlayers()?'학생 1: WASD · 학생 2: 방향키':'이동: WASD 또는 방향키';
+ $('shotCaption').textContent=twoPlayers()?'학생 1: F/G/H · 학생 2: J/K/L':'J/K/L 길게 누르고 → 떼면 타격';
+ for(const [id,txt] of [['shotDink',twoPlayers()?'F · 딩크':'J · 딩크'],['shotDrive',twoPlayers()?'G · 드라이브':'K · 드라이브'],['shotLob',twoPlayers()?'H · 로브':'L · 로브']])$(id).textContent=txt;
+ $('hitBtn').textContent=st.phase==='between'?'▶ 다음 랠리 (SPACE)':twoPlayers()?'SPACE · 다음 랠리':'SPACE · 충전 서브/기본 타격';
+ const dec=st.lastDecision;$('decisionStrip').hidden=!(dec&&(st.phase==='between'||st.phase==='over'));if(dec){$('decisionTitle').textContent=dec.title;$('decisionDetail').textContent=dec.detail;}
+ $('nextBtn').disabled=st.phase!=='between';$('nextBtn').textContent=st.phase==='between'?'▶ 다음 랠리 (SPACE)':'랠리 진행 중…';
+ updateStatus();updateCollectionSummary();
+}
+function showOverlay(icon,title,desc,action){$('modalIcon').textContent=icon;$('modalTitle').textContent=title;$('modalDesc').innerHTML=desc;$('modalGo').textContent=action;$('overlay').classList.remove('hidden')}
+function hideOverlay(){$('overlay').classList.add('hidden')}
+function updateModeGuide(){const m=document.querySelector('input[name="gameMode"]:checked')?.value||'solo';$('modeGuide').textContent=m==='solo'?'1인: WASD 또는 방향키 이동 · J 딩크 / K 드라이브 / L 로브 / SPACE 기본 타격·다음 랠리':m==='coop'?'학생 1: WASD + F/G/H · 학생 2: 방향키 + J/K/L · 각자 자기 구역을 맡아 AI 두 명과 대결': '학생 1(아래): WASD + F/G/H · 학생 2(위): 방향키 + J/K/L · 단식, 서브권 바로 교대';}
+for(const input of document.querySelectorAll('input[name="gameMode"]'))input.addEventListener('change',updateModeGuide);
+function startMatch(){
+ closeInventory();mode=document.querySelector('input[name="gameMode"]:checked')?.value||'solo';document.body.dataset.mode=mode;
+ resetState();hideOverlay();logLine(`🔔 ${mode==='solo'?'1인 복식':mode==='coop'?'2인 협동 복식':'2인 단식 대결'} 시작! ${isPvP()?'0-0':'0-0-2'}부터 서브.`);startRally();
+}
+function startRally(){
+ if(st.phase==='over'||inventoryOpen)return;
+ st.lastReward='';rewardSplashUntil=0;resetCharge();st.phase='playing';st.ball=null;st.lastDecision=null;st.shotIndex=0;st.rally++;st.autoServeAt=performance.now()+1050;prepPlayers();autoAim();
+ const serverHuman=st.serveTeam===0?(st.serverSlot===0?0:mode==='coop'?1:null):isPvP()?1:null;
+ const actor=serverHuman!==null?playerName(serverHuman):(st.serveTeam===0?'AI 파트너':'상대 AI');
+ const side=st.serveTeam===0?(isPvP()?'학생 1':'우리 팀'):(isPvP()?'학생 2':'상대 AI');
+ setMessage(`${side} 서브`,`${side} <strong>${scoreText()}</strong> · ${actor} 서브입니다.`,serverHuman!==null?(twoPlayers()?`${actor} 기술 키를 길게 누르고 떼면 서브합니다.`:'SPACE / J/K/L을 길게 누르고 떼면 서브합니다.'):'상대팀의 서브를 준비하세요.');updateUI();
+}
+function autoAim(){let t=st.serveTeam;if(t===0){let x=C.cx+(serverX(t)>C.cx?-105:105);aim={x,y:165,manual:false}}else{aim={x:user.x,y:440,manual:false}}setShotDefaultAim()}
+function setShotDefaultAim(){if(st.phase==='playing'&&!st.ball&&st.serveTeam===0&&st.serverSlot===0){if(!aim.manual){aim.x=C.cx+(user.x>C.cx?-105:105);aim.y=150}return}if(!aim.manual){aim.y=selected==='dink'?C.kf+35:selected==='lob'?89:136;aim.x=C.cx+(user.x>C.cx?-108:108)}}
+function pickShot(type){selected=type;aim.manual=false;setShotDefaultAim();syncShotBtns()}
+function syncShotBtns(){document.querySelectorAll('[data-shot]').forEach(b=>{b.classList.toggle('active',b.dataset.shot===selected)})}
+function hint(text){toast={text,until:performance.now()+1500}}
+function tone(freq,duration=0.08,type='sine',vol=.025){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const osc=audio.createOscillator(),gain=audio.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,audio.currentTime);gain.gain.setValueAtTime(vol,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+duration);osc.connect(gain).connect(audio.destination);osc.start();osc.stop(audio.currentTime+duration)}catch(e){}}
+function sideY(team,y){return team===0?y>=C.net:y<=C.net}
+function isKitchen(team,y){return team===0?y<=C.kn:y>=C.kf}
+function legalServe(t,p){if(p.x<C.l-1||p.x>C.r+1||p.y<C.t-1||p.y>C.b+1)return '라인 밖으로 서브가 나갔습니다.';if(t===0){if(p.y>=C.kf-1)return '서브가 키친 또는 키친 라인에 떨어졌습니다.';if((p.x-C.cx)*(serverX(0)-C.cx)>1)return '서브는 대각선 서비스 코트로 보내야 합니다.'}else{if(p.y<=C.kn+1)return '상대 서브가 키친에 떨어졌습니다.';if((p.x-C.cx)*(serverX(1)-C.cx)>1)return '서브가 대각선 서비스 코트에 들어가지 않았습니다.'}return null}
+function shotOrigin(t,slot){return t===0?(slot===0?user:partner):opp[isPvP()?0:slot]}
+function hitServe(power=.55,i=0){if(st.phase!=='playing'||st.ball||!isOwnServe(i))return;
+ const t=playerTeam(i),h=playerActor(i);const dir=h.x>C.cx?-1:1;
+ const target=(i===0)?{x:aim.x,y:aim.y}:{x:clamp(C.cx+dir*107,C.l+40,C.r-40),y:t===0?142:485};
+ const dest=powerTarget(h,target,power);fire(t,h,dest,'serve',power);
+}
+function chooseAIShotTarget(t,kind,isServe){if(isServe){let sx=serverX(t);return {x:clamp(C.cx+(sx>C.cx?-rand(90,175):rand(90,175)),C.l+18,C.r-18),y:t===0?rand(104,195):rand(425,520)}}
+ if(t===1){const diff=getDiff(),base=diff==='easy'?user.x:diff==='normal'?user.x+rand(-88,88):Math.random()>.5?C.l+37:C.r-37;let x=clamp(base+rand(-45,45),C.l+15,C.r-15);let y=diff==='easy'?rand(438,515):diff==='normal'?rand(407,532):Math.random()>.55?rand(C.kn+18,C.kn+75):rand(487,545);return {x,y}}
+ const nearX=C.cx+(Math.random()>.5?1:-1)*rand(92,165);return{x:nearX,y:kind==='dink'?rand(C.kf+14,C.net-16):rand(105,207)}
+}
+function fire(t,hitter,target,kind,power=.57){if(st.phase!=='playing')return;const isServe=kind==='serve';const durBase={easy:1390,normal:1185,hard:1010}[getDiff()];
+ let dur=(isServe?durBase+170:kind==='lob'?durBase+290:kind==='dink'?durBase-70:durBase)*(1.2-.5*power);
+ if(t===0)dur+=100;
+ const incoming=st.ball;const from=!isServe&&incoming?{x:incoming.x,y:incoming.y}:{x:hitter.x,y:hitter.y};const at=performance.now();st.shotIndex++;
+ const human=humanForActor(hitter);const fx=human!==null?equippedPaddle(human):null;
+ st.ball={fx:fx?{family:fx.family,grade:fx.grade,color:fx.color}:null,x:from.x,y:from.y,from,to:{x:target.x,y:target.y},toTeam:1-t,hitterTeam:t,shotIndex:st.shotIndex,type:kind,at,duration:dur,power,progress:0,phase:'flight',bouncedAt:0,bounceCount:0,shadowX:from.x,shadowY:from.y,z:0,vx:0,vy:0,vz:0,gravity:BOUNCE_GRAVITY,nextTrailAt:0};
+ if(t===0&&st.ball.toTeam===1)planAI(st.ball);
+ tone(kind==='dink'?460:kind==='lob'?290:540,.065,'triangle',.05);burst(from.x,from.y,kind==='serve'?7:4,t===0?colors.our:colors.opp);
+ if(fx){spawnFamilyImpact(from.x+18,from.y-8,fx,kind);st.equipPulseUntil=at+170+fx.grade*160;}
+ if(isServe)setMessage('서브 출발',`<strong>${scoreText()}</strong> · ${t===0?'우리 팀':'상대 팀'}이 서브했습니다.`, '서브는 대각선으로 넘어가고 반드시 한 번 바운드해야 합니다.');
+ else setMessage(kind==='dink'?'딩크':kind==='lob'?'로브':'드라이브',`${t===0?'우리 팀':'상대 팀'}의 ${kind==='dink'?'딩크':kind==='lob'?'로브':'드라이브'}!`,'착지 지점으로 이동한 뒤, 바운드되어 나아가는 공을 따라가세요.');updateUI()
+}
+function canHit(p,ball){if(ball.phase==='flight'){if(ball.progress<.67)return false;return dist(p,ball)<74}return dist(p,ball)<81}
+function attemptHit(type='drive',power=.55,i=0){
+ if(st.phase!=='playing')return;const h=playerActor(i),t=playerTeam(i);
+ if(!st.ball){if(isOwnServe(i))hitServe(power,i);else hint(`${playerName(i)}의 서브 차례가 아닙니다.`);return}
+ const b=st.ball;
+ if(!isOwnBall(i,b)){hint(`${playerName(i)}의 타격 구역이 아닙니다.`);return}
+ if(!canHit(h,b)){hint(`${playerName(i)}: 공 가까이에서 타격하세요.`);return}
+ if(b.phase==='flight'&&b.shotIndex<=2){finishRally(1-t,'투바운드 위반','서브 리턴과 세 번째 타구는 반드시 바운드된 다음 쳐야 합니다.');return}
+ if(b.phase==='flight'&&isKitchen(t,h.y)){finishRally(1-t,'키친 발리 폴트','키친 안 또는 키친 라인에서 발리하면 폴트입니다.');return}
+ if(i===0&&selected!==type){selected=type;if(!aim.manual)setShotDefaultAim();syncShotBtns()}
+ const depth=t===0?(i===0?aim.y:type==='dink'?C.kf+34:type==='lob'?91:135):(type==='dink'?C.kn-34:type==='lob'?C.b-41:C.b-96);
+ const target=powerTarget({x:b.x,y:b.y},contactLaneTarget(h,b,depth),power);
+ fire(t,h,target,type,power);if(i===0&&!aim.manual)setShotDefaultAim();
+}
+function primaryAction(){if(!$('overlay').classList.contains('hidden')){startMatch();return}if(st.phase==='between'){startRally();return}if(st.phase==='over'){startMatch();return}
+ if(st.phase==='playing'&&mode==='solo')setCharge('drive','button','space');
+}
+function addParticle(p){particles.push(Object.assign({x:0,y:0,vx:0,vy:0,life:.45,max:.45,color:'#fff',size:4,type:'square',rotation:0,spin:0,gravity:0,alpha:1,stroke:null,endSize:null},p))}
+function triggerScreenShake(mag=8,duration=220){screenShakeMag=Math.max(screenShakeMag,mag);screenShakeUntil=Math.max(screenShakeUntil,performance.now()+duration)}
+function burst(x,y,n,color){for(let i=0;i<n;i++)addParticle({x,y,vx:rand(-110,110),vy:rand(-120,50),life:rand(.23,.55),max:.55,color,size:3.5,type:'square',rotation:rand(0,Math.PI*2),spin:rand(-6,6),gravity:200})}
+function spawnFamilyTrail(x,y,fx){if(!fx)return;const drift=24+fx.grade*12;
+ const n=fx.grade>=4?2:1;
+ for(let j=0;j<n;j++){
+  if(fx.family==='fire')addParticle({x:x+rand(-9,9),y:y+rand(-6,6),vx:rand(-drift,drift),vy:rand(-55,36),life:rand(.26,.56),max:.56,color:Math.random()<.35?'#ffe89b':Math.random()<.7?'#ff964f':'#ff533d',size:4+fx.grade*1.2,type:'ember',gravity:-12});
+  else if(fx.family==='ice')addParticle({x:x+rand(-9,9),y:y+rand(-6,6),vx:rand(-drift,drift),vy:rand(16,66),life:rand(.34,.58),max:.58,color:Math.random()<.45?'#efffff':'#8fe5ff',size:4+fx.grade*1.25,type:'shard',gravity:105,rotation:rand(0,Math.PI),spin:rand(-8,8)});
+  else if(fx.family==='electric')addParticle({x:x+rand(-6,6),y:y+rand(-6,6),vx:rand(-26,26),vy:rand(-22,22),life:rand(.12,.24),max:.24,color:Math.random()<.55?'#fff39d':'#ffd84d',size:10+fx.grade*2.8,type:'spark'});
+  else if(fx.family==='shadow')addParticle({x:x+rand(-7,7),y:y+rand(-7,7),vx:rand(-18,18),vy:rand(-22,22),life:rand(.26,.48),max:.48,color:Math.random()<.5?'#efc0ff':'#8b61ff',size:6+fx.grade*1.5,type:'orb',gravity:-10,alpha:.82});
+ }
+ if(fx.family==='electric'&&fx.grade>=3)addParticle({x,y,life:.14,max:.14,color:'#ffe86f',size:18+fx.grade*4,type:'bolt',rotation:rand(0,Math.PI*2),stroke:'#ffe86f'});
+}
+function spawnLegendaryImpact(x,y,fx){
+ if(fx.family==='fire'){
+  addParticle({x,y,life:.62,max:.62,color:'#ffbc5d',size:34,endSize:118,type:'dragon',rotation:-Math.PI/2});
+  for(let i=0;i<18;i++)addParticle({x:x+rand(-12,12),y:y+rand(-8,8),vx:rand(-120,120),vy:rand(-130,50),life:rand(.45,.85),max:.85,color:i%2?'#ff5d43':'#ffd36f',size:7+Math.random()*7,type:'ember',gravity:-18});
+ }else if(fx.family==='ice'){
+  addParticle({x,y,life:.6,max:.6,color:'#b8f2ff',size:28,endSize:96,type:'snowburst',stroke:'#eaffff'});
+  for(let i=0;i<22;i++)addParticle({x,y,vx:Math.cos(i/22*Math.PI*2)*(80+rand(20,120)),vy:Math.sin(i/22*Math.PI*2)*(80+rand(20,120)),life:rand(.46,.8),max:.8,color:i%2?'#eaffff':'#88e0ff',size:8+Math.random()*6,type:'shard',gravity:110,rotation:rand(0,Math.PI),spin:rand(-10,10)});
+ }else if(fx.family==='electric'){
+  for(let i=0;i<6;i++)addParticle({x,y,life:.22,max:.22,color:'#ffe86f',size:42+Math.random()*18,type:'chain',rotation:(Math.PI*2/6)*i,stroke:'#ffe86f'});
+  for(let i=0;i<15;i++)addParticle({x,y,life:rand(.12,.22),max:.22,color:i%2?'#fff8b1':'#ffd84d',size:12+Math.random()*6,type:'spark'});
+ }else if(fx.family==='shadow'){
+  addParticle({x,y,life:.66,max:.66,color:'#d499ff',size:30,endSize:110,type:'rift',stroke:'#f1c7ff'});
+  addParticle({x,y,life:.46,max:.46,color:'#ffffff',size:12,endSize:48,type:'ring',stroke:'#ffffff',alpha:.35});
+  for(let i=0;i<18;i++)addParticle({x:x+rand(-10,10),y:y+rand(-10,10),vx:rand(-70,70),vy:rand(-70,70),life:rand(.4,.74),max:.74,color:i%2?'#f0c0ff':'#8d62ff',size:7+Math.random()*5,type:'orb',gravity:-12,alpha:.8});
+ }
+ triggerScreenShake(12,360);
+}
+function spawnFamilyImpact(x,y,fx,kind='drive'){if(!fx)return;const g=fx.grade, count=14+g*9;
+ addParticle({x,y,life:.42+.06*g,max:.42+.06*g,color:fx.color,size:18+g*8,endSize:52+g*14,type:'ring',stroke:fx.color,alpha:.88});
+ addParticle({x,y,life:.28+.05*g,max:.28+.05*g,color:'#ffffff',size:8+g*6,endSize:32+g*11,type:'ring',stroke:'#ffffff',alpha:g>=2?.5:.3});
+ for(let i=0;i<count;i++){
+  const ang=rand(-Math.PI,Math.PI),speed=65+g*34+rand(0,120),vx=Math.cos(ang)*speed,vy=Math.sin(ang)*speed;
+  if(fx.family==='fire')addParticle({x:x+rand(-6,6),y:y+rand(-6,6),vx,vy:vy-rand(12,52),life:rand(.34,.72),max:.72,color:i%3===0?'#ffe6a2':i%2===0?'#ff8a42':'#ff4f3f',size:5+g*2+Math.random()*4,type:'ember',gravity:-18});
+  else if(fx.family==='ice')addParticle({x:x+rand(-6,6),y:y+rand(-6,6),vx,vy:vy+rand(8,50),life:rand(.44,.86),max:.86,color:i%2===0?'#efffff':'#7fddff',size:5+g*1.7+Math.random()*4,type:'shard',gravity:110,rotation:rand(0,Math.PI),spin:rand(-10,10)});
+  else if(fx.family==='electric')addParticle({x,y,vx:vx*.28,vy:vy*.28,life:rand(.12,.24),max:.24,color:i%2===0?'#fff6a8':'#ffd84d',size:10+g*2.8+Math.random()*4,type:'spark'});
+  else if(fx.family==='shadow')addParticle({x:x+rand(-6,6),y:y+rand(-6,6),vx:vx*.38,vy:vy*.38,life:rand(.38,.78),max:.78,color:i%2===0?'#f4c9ff':'#885cff',size:6+g*2.1+Math.random()*4,type:Math.random()<.45?'ring':'orb',gravity:-8,alpha:.8,stroke:'#dca5ff',endSize:20+g*6});
+ }
+ if(fx.family==='electric'){for(let i=0;i<4+g;i++)addParticle({x,y,life:rand(.12,.24),max:.24,color:'#ffe86f',size:24+g*5+Math.random()*10,type:'bolt',rotation:rand(0,Math.PI*2),stroke:'#ffe86f'})}
+ if(g>=4)spawnLegendaryImpact(x,y,fx); else if(g>=3)triggerScreenShake(6+g*1.1,240+g*30);
+}
+function finishRally(winner,label,explanation){
+ if(st.phase!=='playing')return;
+ resetCharge();st.phase='between';st.ball=null;st.winner=winner;st.revealAt=performance.now()+450;
+ const now=performance.now(),offender=1-winner,serverWas=st.serveTeam,scored=winner===serverWas;
+ st.cheerUntil=now+3700;st.cheerTeam=winner;st.pointTeam=scored?winner:null;st.pointFlashUntil=now+3100;
+ tone(winner===0?780:220,.2,winner===0?'sine':'sawtooth',.045);
+ let title='',explain='';
+ if(scored){st.scores[winner]++;title=`${winner===0?'우리 팀':'상대 팀'} +1점`;explain='서브팀이 랠리를 이겨 1점 득점! 같은 서버가 좌우 서비스 코트를 바꿔 서브합니다.';}
+ else if(!isPvP()&&st.serverNum===1){st.serverNum=2;st.serverSlot=1-st.serverSlot;title='두 번째 서버로 교대';explain='리시브팀이 랠리를 이겼지만 점수는 오르지 않습니다. 같은 팀의 두 번째 서버가 서브합니다.';}
+ else{st.serveTeam=1-st.serveTeam;st.serverNum=1;st.serverSlot=isPvP()?0:rightSlot(st.serveTeam);title='사이드아웃 · 서브권 이동';explain=isPvP()?'단식에서는 리시버가 이기면 득점 없이 바로 서브권이 넘어갑니다.':'리시브팀이 이겼지만 점수는 오르지 않습니다. 두 번째 서버의 실패로 서브권이 넘어갑니다.';}
+ const wonMatch=scored&&st.scores[winner]>=Number($('targetScore').value)&&st.scores[winner]-st.scores[1-winner]>=2;
+ rewardForScore(winner,scored,wonMatch);
+ const faultSide=isPvP()?playerName(offender):(offender===0?'우리 팀':'상대 AI');
+ const winnerSide=isPvP()?playerName(winner):(winner===0?'우리 팀':'상대 AI');
+ st.lastDecision={winner,offender,reason:label,title:`🚩 ${faultSide} ${label} → ${title}`,detail:`${explanation} ${explain}` ,scored};
+ logLine(`${winner===0?'🔵':'🟠'} ${winnerSide} 랠리 승리 | ${faultSide}: ${label} | ${title} (${scoreText()})`);
+ setMessage(scored?`${winnerSide} 득점!`:`${winnerSide} 랠리 승리`,
+   `<strong>🚩 실점 원인: ${faultSide} · ${label}</strong><br>${explanation}<br><br><strong>${title}</strong><br>${explain}${st.lastReward?'<br><br>🎁 '+st.lastReward:''}`,
+   `판정: ${faultSide} ${label} · 현재 점수 ${st.scores[0]} : ${st.scores[1]} · 다음 서브 ${scoreText()}`);
+ burst(C.cx,C.net,24,winner===0?colors.our:colors.opp);
+ for(let i=0;i<22;i++){burst(winner===0?rand(50,180):rand(743,873),rand(205,535),1,winner===0?colors.our:colors.opp)}
+ if(wonMatch){
+  st.phase='over';st.message=winner===0?'🏆 승리!':'다음 경기에서 다시 도전!';updateUI();
+  showOverlay(winner===0?'🏆':'🎯',winner===0?'우리 팀 승리!':'상대 팀 승리!',
+    `최종 점수 <strong>${st.scores[0]} : ${st.scores[1]}</strong><br><strong>마지막 판정: ${faultSide} ${label}</strong><br>${explanation}<br>${st.lastReward?'🎁 '+st.lastReward+'<br>':''}I키로 아이템창을 열 수 있습니다.<br>SPACE를 눌러 새 경기를 시작하세요.`, '다시 경기하기 (SPACE)');return;
+ }
+ updateUI();
+}
+function validateLanding(b){
+ const p=b.to, hitter=b.hitterTeam;
+ const outX=p.x<C.l-1||p.x>C.r+1;
+ const outY=p.y<C.t-1||p.y>C.b+1;
+ const isShort=!sideY(b.toTeam,p.y);
+ let label=null,detail=null;
+ // Resolve the simulated flight before the serve boxes so that the message
+ // identifies whether a weak ball hit the net or a ball landed outside.
+ if(isShort){label=b.power<.37?'파워 부족 · 네트 폴트':'네트 폴트';detail=b.power<.37?'타격 파워가 약해 공이 네트까지 도달하지 못했습니다. 적절한 시간 동안 키를 눌러 주세요.':'공이 네트를 넘지 못했습니다. 공의 세기와 타구 방향을 조절하세요.';}
+ else if(outX||outY){label=b.type==='serve'?'서브 아웃':b.power>.75?'강한 타구 아웃':'코트 밖 아웃';detail=b.power>.75?'타격 파워가 너무 강해 공이 코트 바깥으로 나갔습니다. 힘을 조금 줄여 보세요.':'상대 코트 밖에 공이 떨어졌습니다. 경계선에 닿으면 인(IN)입니다.';}
+ else if(b.type==='serve'){
+  const serveFault=legalServe(hitter,p);
+  if(serveFault){
+   if((hitter===0&&p.y>=C.kf-1)||(hitter===1&&p.y<=C.kn+1)){label='서브 키친 폴트';detail='서브가 키친 안이나 키친 라인에 떨어졌습니다. 대각선 서비스 코트 깊숙이 보내세요.';}
+   else{label='서브 대각선 폴트';detail='서브는 상대방의 대각선 서비스 코트 안에 떨어져야 합니다.';}
+  }
+ }
+ if(label){finishRally(b.toTeam,label,detail);return false}
+ return true;
+}
+function updateBall(now){const b=st.ball;if(!b)return;
+ if(b.phase==='flight'){
+  b.progress=clamp((now-b.at)/b.duration,0,1);
+  const p=b.progress;
+  b.x=b.from.x+(b.to.x-b.from.x)*p;
+  b.y=b.from.y+(b.to.y-b.from.y)*p;
+  b.z=Math.sin(Math.PI*p)*flightHeight(b.type);
+  if(b.fx&&now>=(b.nextTrailAt||0)){spawnFamilyTrail(b.x,b.y-b.z,b.fx);b.nextTrailAt=now+Math.max(30,82-b.fx.grade*10)}
+  if(p>=1){
+   if(!validateLanding(b))return;
+   firstBounce(b,now);
+   burst(b.x,b.y,5,'#e9f8ff');tone(260,.05,'sine',.015);
+  }
+ }else if(b.phase==='bounced'){
+  const t=Math.max(0,(now-b.bouncedAt)/1000);
+  // Reflect the *vertical* component at the floor, not the horizontal ones.
+  // The ball therefore keeps travelling after landing rather than jumping in place.
+  b.x=b.to.x+b.vx*t;
+  b.y=b.to.y+b.vy*t;
+  b.z=Math.max(0,b.vz*t-.5*b.gravity*t*t);
+  if(b.fx&&now>=(b.nextTrailAt||0)){spawnFamilyTrail(b.x,b.y-b.z,b.fx);b.nextTrailAt=now+Math.max(38,90-b.fx.grade*9)}
+  if(t>=2*b.vz/b.gravity){
+   b.bounceCount=2;
+   finishRally(b.hitterTeam,'두 번째 바운드 · 리턴 실패',b.toTeam===1?'상대 팀이 공을 두 번 바운드시키고도 받아치지 못했습니다.':'우리 팀이 공을 두 번 바운드시키고도 받아치지 못했습니다.');
+  }
+ }
+ if(st.ball===b){b.shadowX=b.x;b.shadowY=b.y}
+}
+function approach(p,tx,ty,speed,dt){let dx=tx-p.x,dy=ty-p.y,dd=Math.hypot(dx,dy);if(dd>1){let step=Math.min(dd,speed*dt);p.x+=dx/dd*step;p.y+=dy/dd*step}}
+function updateAI(dt,now){if(st.phase!=='playing'||isPvP())return;
+ const b=st.ball,cfg=AI_LEVEL[getDiff()];
+ // The partner owns only its half of the court; it may choose a shot angle.
+ // An 11-point game still uses the same partner rules and scoring.
+ const partnerCfg={angleChance:.52,accuracy:.69,aimError:24,contactOffset:22};
+ let partnerTargetX=partner.homeX,partnerTargetY=478;
+ if(mode==='solo'&&b&&b.toTeam===0&&assignedToPartner(b)){
+   if(!b.partnerAttack)b.partnerAttack=chooseAIAttackPlan(0,partnerCfg);
+   const expectedX=b.phase==='bounced'?b.x+b.vx*.09:b.to.x;
+   const expectedY=b.phase==='bounced'?b.y+b.vy*.09:b.to.y;
+   partnerTargetX=expectedX-b.partnerAttack.side*b.partnerAttack.contactOffset;
+   partnerTargetY=Math.max(C.kn+18,expectedY);
+ }else if(b&&b.toTeam===1){partnerTargetY=410}
+ if(mode==='solo'&&!(st.serveTeam===0&&!b&&st.serverSlot===1))approach(partner,clamp(partnerTargetX,C.l+20,C.r-20),clamp(partnerTargetY,C.kn+16,C.b-15),195,dt);
+ // Enemy AI reacts after a delay, and positions off-centre for crosscourt shots.
+ opp.forEach((p,i)=>{
+  if(st.serveTeam===1&&!b&&st.serverSlot===i)return;
+  let tx=p.homeX,ty=156;
+  if(b&&b.toTeam===1){
+   const plan=b.aiPlan;
+   if(plan&&now>=plan.readyAt&&i===plan.actor){
+    tx=plan.readX-plan.attack.side*plan.attack.contactOffset;ty=plan.readY;
+    if(b.phase==='bounced'&&getDiff()==='hard'){
+      tx=b.x+b.vx*.075-plan.attack.side*plan.attack.contactOffset;
+      ty=b.y+b.vy*.075;
+    }
+   }else if(i!==plan?.actor)ty=196;
+  }else if(b&&b.toTeam===0){ty=200}
+  approach(p,clamp(tx,C.l+18,C.r-18),clamp(ty,C.t+16,C.kf-9),cfg.speed,dt);
+ });
+ if(!b){
+  if(now>st.autoServeAt&&(st.serveTeam===1||(mode==='solo'&&st.serveTeam===0&&st.serverSlot===1))){const hitter=shotOrigin(st.serveTeam,st.serverSlot);fire(st.serveTeam,hitter,chooseAIShotTarget(st.serveTeam,'serve',true),'serve',.58)}
+  return;
+ }
+ if(b.toTeam===1){
+  const plan=b.aiPlan;if(!plan)return;
+  const p=opp[plan.actor];
+  if(now<plan.readyAt+cfg.hitDelay||plan.whiff)return;
+  if(b.phase==='flight'&&(b.shotIndex<=2||b.progress<.9))return;
+  if(dist(p,b)>cfg.reach)return;
+  const kind=Math.random()>.8?'dink':'drive';
+  // Bad shots are still possible; a planned corner attack is never guaranteed.
+  const target=plan.badHit?aiFaultTarget():aiDirectionalTarget(p,b,plan.attack,cfg);
+  fire(1,p,target,kind,rand(.48,.8));
+ }else if(mode==='solo'&&assignedToPartner(b)){
+  if(canHit(partner,b)&&!(b.phase==='flight'&&b.shotIndex<=2)){
+   const kind=Math.random()>.65?'dink':'drive';
+   const attack=b.partnerAttack||chooseAIAttackPlan(0,partnerCfg);
+   const target=aiDirectionalTarget(partner,b,attack,partnerCfg);
+   fire(0,partner,target,kind,.58);
+  }
+ }
+}
+function assignedToPartner(ball){return Math.abs(ball.to.x-partner.homeX)<Math.abs(ball.to.x-user.homeX)}
+function assignedOpp(ball){return Math.abs(ball.to.x-opp[0].homeX)<Math.abs(ball.to.x-opp[1].homeX)?0:1}
+function moveHuman(p,keys,dt,team,freeze=false){
+ let dx=0,dy=0;if(held.has(keys.left)||(keys.touch&&pressedDirs.has('left')))dx--;
+ if(held.has(keys.right)||(keys.touch&&pressedDirs.has('right')))dx++;
+ if(held.has(keys.up)||(keys.touch&&pressedDirs.has('up')))dy--;
+ if(held.has(keys.down)||(keys.touch&&pressedDirs.has('down')))dy++;
+ if((dx||dy)&&!freeze){const len=Math.hypot(dx,dy),spd=p.speed||310;
+ p.x=clamp(p.x+dx/len*spd*dt,C.l+11,C.r-11);
+ p.y=clamp(p.y+dy/len*spd*dt,team===0?C.net+18:C.t-13,team===0?C.b+13:C.net-18);
+ }
+}
+function updateUser(dt){if(st.phase!=='playing')return;
+ moveHuman(user,{left:'a',right:'d',up:'w',down:'s',touch:true},dt,0,!st.ball&&isOwnServe(0));
+ if(mode==='solo'){moveHuman(user,{left:'arrowleft',right:'arrowright',up:'arrowup',down:'arrowdown'},dt,0,!st.ball&&isOwnServe(0));}
+ else moveHuman(playerActor(1),{left:'arrowleft',right:'arrowright',up:'arrowup',down:'arrowdown'},dt,playerTeam(1),!st.ball&&isOwnServe(1));
+}
+function drawRounded(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.stroke()}}
+function drawCrowd(now){
+ for(let side=0;side<2;side++){
+  const baseX=side===0?25:728,w=166,shouting=st.cheerTeam===side&&now<st.cheerUntil;
+  drawRounded(baseX,160,w,391,14,'#081d2df3','#34536c');
+  const colorsCrowd=side===0?['#59c5d1','#b1e9f0','#6289c2','#98d8ca']:['#f6aa79','#e7c087','#d88e8c','#c9a8bd'];
+  for(let row=0;row<9;row++){
+   const yy=187+row*39;
+   ctx.strokeStyle='#436076';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(baseX+4,yy+23);ctx.lineTo(baseX+w-4,yy+23);ctx.stroke();
+   for(let col=0;col<4;col++){
+    const id=row*4+col,x=baseX+18+col*42,y=yy+Math.sin(now/430+id)*1.1;
+    const bounce=shouting?(4+3*Math.sin(now/105+id*1.9)):1.5*Math.sin(now/500+id);
+    const raised=shouting||Math.sin(now/750+id*2.2)>.76;
+    ctx.strokeStyle='#e9c6a3';ctx.lineWidth=3;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(x-8,y+11-bounce);ctx.lineTo(x-14,y+(raised?-7:16)-bounce);
+    ctx.moveTo(x+8,y+11-bounce);ctx.lineTo(x+14,y+(raised?-9:15)-bounce);ctx.stroke();
+    drawRounded(x-9,y+5-bounce,18,21,5,colorsCrowd[(id+side)%4]);
+    ctx.fillStyle=['#eac5a3','#d6a67d','#f4d8bc','#c38e6d'][id%4];ctx.beginPath();ctx.arc(x,y-bounce,8,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#203044';ctx.beginPath();ctx.arc(x-1,y-6-bounce,7,Math.PI,Math.PI*2);ctx.fill();
+    if(shouting){ctx.fillStyle='#2a2938';ctx.beginPath();ctx.ellipse(x+1,y+3-bounce,2,3.2,0,0,Math.PI*2);ctx.fill()}
+   }
+  }
+  // Supporters raise banners and pennants during a successful rally.
+  const signText=shouting?(side===0?'우리 팀 파이팅!':'상대 팀 파이팅!'):(side===0?'힘내라!':'GO! GO!');
+  drawRounded(baseX+19,557,128,34,9,shouting?(side===0?'#dfffa3':'#ffbd9c'):'#29475c','#d6fcf2');
+  ctx.fillStyle=shouting?'#182736':'#e4f5ff';ctx.font='900 14px system-ui';ctx.textAlign='center';ctx.fillText(signText,baseX+83,580,119);
+ }
+}
+function drawScoreboards(now){
+ // Scoreboards are inside the gameplay canvas, immediately beside the court,
+ // so students can read the score without looking at settings/sidebar.
+ for(let side=0;side<2;side++){
+  const x=side===0?19:722,y=17,w=179,h=133;
+  const flash=st.pointTeam===side&&now<st.pointFlashUntil;
+  const face=side===0?'#0f4056':'#4b2d30',accent=side===0?colors.our:colors.opp;
+  drawRounded(x,y,w,h,16,face,flash?'#eaff7a':'#88bbcc');
+  ctx.save();ctx.textAlign='center';ctx.fillStyle=accent;ctx.font='900 16px system-ui';ctx.fillText(side===0?(isPvP()?'● 학생 1':'● 우리 팀'):(isPvP()?'● 학생 2':'● 상대 AI'),x+w/2,y+24);
+  ctx.fillStyle='#ffffff';ctx.font='1000 56px system-ui';ctx.shadowColor=flash?'#eaff7a':'#0007';ctx.shadowBlur=flash?17:3;ctx.fillText(String(st.scores[side]),x+w/2,y+85);ctx.shadowBlur=0;
+  ctx.fillStyle=st.serveTeam===side?'#eaff86':'#c9d9e6';ctx.font='850 13px system-ui';ctx.fillText(st.serveTeam===side?'🏓 서브권':'수비 팀',x+w/2,y+114);
+  ctx.restore();
+ }
+ drawRounded(C.cx-88,4,176,35,10,'#0b2538ef','#b7e0e2');
+ ctx.fillStyle='#f5fff9';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText(scoreText().replaceAll('-',' – '),C.cx,28);
+}
+function drawZoneLabels(){
+ ctx.save();ctx.textAlign='center';ctx.font='900 12px system-ui';
+ if(isPvP()){
+  drawRounded(C.cx-49,80,98,24,7,'#693c38cc','#ffb5a2');ctx.fillStyle='#ffe5d5';ctx.fillText('학생 2 · 위쪽',C.cx,96);
+  drawRounded(C.cx-49,532,98,24,7,'#073745c9','#92dcec');ctx.fillStyle='#dbfffb';ctx.fillText('학생 1 · 아래쪽',C.cx,548);
+ }else{
+  const xUser=clamp(user.homeX,C.l+65,C.r-65),xMate=clamp(partner.homeX,C.l+65,C.r-65);
+  drawRounded(xUser-46,532,92,25,7,'#073745b5','#92dcec');ctx.fillStyle='#dbfffb';ctx.fillText(mode==='coop'?'학생 1 구역':'나의 구역',xUser,549);
+  drawRounded(xMate-55,532,110,25,7,'#293b67c4','#b2bcff');ctx.fillStyle='#eff0ff';ctx.fillText(mode==='coop'?'학생 2 구역':'AI 파트너 구역',xMate,549);
+ }
+ ctx.restore();
+}
+function drawBackground(now){const grd=ctx.createLinearGradient(0,0,0,H);grd.addColorStop(0,'#092335');grd.addColorStop(.5,'#163849');grd.addColorStop(1,'#092134');ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+ // Dedicated spectator stands along both outer sidelines.
+ drawCrowd(now);
+ drawRounded(192,21,537,576,22,'#20374c','#578298');ctx.shadowColor='#000';ctx.shadowBlur=27;ctx.shadowOffsetY=10;drawRounded(C.l-3,C.t-3,C.r-C.l+6,C.b-C.t+6,8,'#3e95a2');ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+ const clay=ctx.createLinearGradient(0,C.t,0,C.b);clay.addColorStop(0,'#387e87');clay.addColorStop(.5,'#397a86');clay.addColorStop(.501,'#2e8d98');clay.addColorStop(1,'#327983');ctx.fillStyle=clay;ctx.fillRect(C.l,C.t,C.r-C.l,C.b-C.t);
+ // Non-volley zones
+ ctx.fillStyle='rgba(245,222,126,.17)';ctx.fillRect(C.l,C.kf,C.r-C.l,C.net-C.kf);ctx.fillRect(C.l,C.net,C.r-C.l,C.kn-C.net);
+ ctx.strokeStyle='#f4fbff';ctx.lineWidth=3;ctx.strokeRect(C.l,C.t,C.r-C.l,C.b-C.t);ctx.beginPath();ctx.moveTo(C.l,C.kf);ctx.lineTo(C.r,C.kf);ctx.moveTo(C.l,C.kn);ctx.lineTo(C.r,C.kn);ctx.moveTo(C.cx,C.t);ctx.lineTo(C.cx,C.kf);ctx.moveTo(C.cx,C.kn);ctx.lineTo(C.cx,C.b);ctx.stroke();
+ ctx.save();ctx.globalAlpha=.53;ctx.font='900 16px system-ui';ctx.fillStyle='#ebfffa';ctx.textAlign='center';ctx.fillText('NON-VOLLEY ZONE',C.cx,285);ctx.fillText('NON-VOLLEY ZONE',C.cx,350);ctx.restore();
+ // Net and mesh
+ ctx.fillStyle='#163447';ctx.fillRect(C.l-10,C.net-7,C.r-C.l+20,14);ctx.fillStyle='#edffff';ctx.fillRect(C.l-10,C.net-6,C.r-C.l+20,4);ctx.strokeStyle='#9dd5dc';ctx.lineWidth=1;for(let x=C.l;x<C.r;x+=11){ctx.beginPath();ctx.moveTo(x,C.net-3);ctx.lineTo(x,C.net+7);ctx.stroke()}ctx.fillStyle='#e5f8ff';ctx.fillRect(C.l-13,C.net-10,6,22);ctx.fillRect(C.r+7,C.net-10,6,22);
+ drawScoreboards(now);
+ ctx.save();ctx.fillStyle='#ffffffb0';ctx.font='800 13px system-ui';ctx.fillText('우리 팀',C.cx,C.b+29);ctx.restore();drawZoneLabels();
+}
+function drawCharacter(p,color,label,t,now,human=false){let moving=Math.sin(now/130+p.x*.05);let y=p.y;ctx.save();ctx.translate(p.x,y);ctx.shadowColor='#07172499';ctx.shadowBlur=12;ctx.shadowOffsetY=8;ctx.fillStyle='#092c39a8';ctx.beginPath();ctx.ellipse(0,17,22,9,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+ const humanIndex=humanForActor(p);const person=humanIndex!==null;const personalPaddle=person?equippedPaddle(humanIndex):null;
+ if(person&&personalPaddle){const e=personalPaddle;const wobble=2*Math.sin(now/170);ctx.globalAlpha=.27+e.grade*.07;ctx.strokeStyle=e.color;ctx.lineWidth=1+e.grade*.6;ctx.beginPath();ctx.arc(0,0,29+e.grade*3+wobble,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;}
+ if(person){ctx.strokeStyle=humanIndex===0?'#e9ff74':'#ffc27e';ctx.lineWidth=3;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(0,3,26,0,Math.PI*2);ctx.stroke();ctx.setLineDash([])}
+ ctx.fillStyle='#183142';ctx.beginPath();ctx.roundRect(-12,12,9,13,3);ctx.roundRect(4,12,9,13,3);ctx.fill();ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(-16,-12,32,32,10);ctx.fill();ctx.strokeStyle='#fff7';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#f6d9be';ctx.beginPath();ctx.arc(0,-19,13,0,Math.PI*2);ctx.fill();ctx.fillStyle='#1c364c';ctx.beginPath();ctx.arc(0,-25,13,Math.PI,Math.PI*1.95);ctx.fill();ctx.save();ctx.translate(18,2);ctx.rotate(t===0?.48:-.48);
+ const equipped=personalPaddle;
+ if(equipped){ctx.shadowColor=equipped.color;ctx.shadowBlur=6+equipped.grade*4;}
+ drawRounded(0,-10,19,26,7,equipped?.color||'#f7f5e4',equipped?'#ffffff':'#25556f');
+ if(equipped){ctx.strokeStyle='#f6faff';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(4,-4);ctx.lineTo(14,9);ctx.moveTo(14,-4);ctx.lineTo(4,9);ctx.stroke();}
+ ctx.shadowBlur=0;ctx.restore();ctx.font='950 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#071624';ctx.fillText(label,0,7);ctx.restore()}
+function drawAim(now){if(st.phase!=='playing')return;
+ let ax,ay,label='서브 조준',h=user,b=st.ball;
+ if(!b){if(st.serveTeam===0&&st.serverSlot===0){ax=aim.x;ay=aim.y;}
+ else if(twoPlayers()&&isOwnServe(1)){h=playerActor(1);ax=C.cx+(h.x>C.cx?-108:108);ay=playerTeam(1)===0?142:485;label='학생 2 서브';}
+ else return;
+ }else{
+  let i=-1;if(isOwnBall(0,b))i=0;else if(twoPlayers()&&isOwnBall(1,b))i=1;else return;
+  h=playerActor(i);const t=playerTeam(i);const depth=t===0?(i===0?aim.y:135):C.b-96;
+  const contact=contactLaneTarget(h,b,depth);const projected=powerTarget({x:b.x,y:b.y},contact,.58);
+  ax=projected.x;ay=projected.y;label=(i===1?'학생 2 · ':'')+(Math.abs(b.x-h.x)<7?'중앙 타격':b.x<h.x?'왼쪽 타격':'오른쪽 타격');
+ }
+ ctx.save();const phase=now/500;ctx.strokeStyle=h===user?'#eeff80':'#ffb67e';ctx.lineWidth=3;ctx.globalAlpha=.73+.2*Math.sin(phase);
+ ctx.beginPath();ctx.arc(ax,ay,13+2*Math.sin(phase),0,2*Math.PI);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(ax-21,ay);ctx.lineTo(ax-10,ay);ctx.moveTo(ax+10,ay);ctx.lineTo(ax+21,ay);ctx.moveTo(ax,ay-21);ctx.lineTo(ax,ay-10);ctx.moveTo(ax,ay+10);ctx.lineTo(ax,ay+21);ctx.stroke();ctx.font='800 10px system-ui';ctx.fillStyle='#faffb1';ctx.textAlign='center';ctx.fillText(label,ax,ay-26);ctx.restore();
+}
+function drawBall(now){const b=st.ball;if(!b)return;ctx.save();
+ // Ground shadow follows the ball even *after* its first bounce.
+ const z=b.z||0;
+ ctx.globalAlpha=.55;ctx.fillStyle='#17313f';ctx.beginPath();ctx.ellipse(b.x+5,b.y+9,12+z*.035,6+z*.018,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+ // Landing target is meaningful only before the first contact with the court.
+ if(b.phase==='flight'){
+  ctx.setLineDash([6,6]);ctx.strokeStyle=b.toTeam===0?'#f1ff9e':'#edffff';ctx.lineWidth=2;ctx.globalAlpha=.50+.24*Math.sin(now/230);ctx.beginPath();ctx.arc(b.to.x,b.to.y,21,0,2*Math.PI);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+ }
+ const trail=Math.min(b.fx?4+b.fx.grade*2:4,b.phase==='flight'?Math.floor(b.progress*(b.fx?16:8)):b.fx?4+b.fx.grade*2:4);
+ const tx=b.phase==='flight'?(b.to.x-b.from.x)/b.duration:b.vx/1000;
+ const ty=b.phase==='flight'?(b.to.y-b.from.y)/b.duration:b.vy/1000;
+ for(let i=trail;i>=1;i--){ctx.globalAlpha=clamp((trail+1-i)/(trail+4),.08,.68);ctx.fillStyle=b.fx?.color||colors.ball;const px=b.x-tx*18*i,py=b.y-z-ty*18*i;ctx.beginPath();ctx.arc(px,py,Math.max(1.6,8-i*.5),0,Math.PI*2);ctx.fill();
+ if(b.fx&&i%2===0){ctx.strokeStyle=b.fx.color;ctx.lineWidth=1.2+b.fx.grade*.4;ctx.beginPath();
+ if(b.fx.family==='electric'){ctx.moveTo(px-5,py-4);ctx.lineTo(px+3,py-11);ctx.lineTo(px+2,py);ctx.lineTo(px+9,py+4)}
+ else if(b.fx.family==='ice'){ctx.moveTo(px-6,py);ctx.lineTo(px+6,py);ctx.moveTo(px,py-6);ctx.lineTo(px,py+6)}
+ else if(b.fx.family==='shadow'){ctx.arc(px,py,5+i*.7,0,Math.PI)}
+ else{ctx.moveTo(px-3,py+6);ctx.quadraticCurveTo(px+7,py-8,px+2,py-12)}ctx.stroke()}}
+ ctx.globalAlpha=1;ctx.shadowColor=b.fx?.color||'#faff7e';ctx.shadowBlur=b.fx?14+b.fx.grade*4:17;ctx.fillStyle=colors.ball;ctx.beginPath();ctx.arc(b.x,b.y-z,9.4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#90ac27';ctx.beginPath();ctx.arc(b.x-2,b.y-z-2,1.8,0,Math.PI*2);ctx.fill();ctx.restore()}
+function drawParticles(dt){for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.992;p.vy+=(p.gravity??210)*dt;p.rotation=(p.rotation||0)+(p.spin||0)*dt;if(p.life<=0){particles.splice(i,1);continue}
+ const alpha=Math.max(0,Math.min(1,(p.life/p.max)*(p.alpha??1)));const size=((p.endSize!=null)?(p.size+(1-p.life/p.max)*(p.endSize-p.size)):p.size);
+ ctx.save();ctx.globalAlpha=alpha;ctx.translate(p.x,p.y);ctx.rotate(p.rotation||0);
+ if(p.type==='ring'){
+  ctx.strokeStyle=p.stroke||p.color;ctx.lineWidth=Math.max(1.4,size*.11);ctx.beginPath();ctx.arc(0,0,size,0,Math.PI*2);ctx.stroke();
+ }else if(p.type==='ember'){
+  ctx.shadowColor=p.color;ctx.shadowBlur=size*1.5;ctx.fillStyle=p.color;ctx.beginPath();ctx.ellipse(0,0,size*.95,size*1.35,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff6d4';ctx.globalAlpha*=.58;ctx.beginPath();ctx.ellipse(0,-size*.18,size*.35,size*.62,0,0,Math.PI*2);ctx.fill();
+ }else if(p.type==='shard'){
+  ctx.fillStyle=p.color;ctx.beginPath();ctx.moveTo(0,-size);ctx.lineTo(size*.7,size*.08);ctx.lineTo(size*.22,size);ctx.lineTo(-size*.25,size*.52);ctx.lineTo(-size*.7,size*.08);ctx.closePath();ctx.fill();ctx.strokeStyle='#ffffff88';ctx.lineWidth=1;ctx.stroke();
+ }else if(p.type==='spark'){
+  ctx.strokeStyle=p.color;ctx.lineWidth=Math.max(1.4,size*.18);ctx.beginPath();ctx.moveTo(-size*.6,-size*.45);ctx.lineTo(-size*.1,-size*.95);ctx.lineTo(-size*.18,-size*.18);ctx.lineTo(size*.1,-size*.18);ctx.lineTo(-size*.02,size*.72);ctx.lineTo(size*.62,size*.12);ctx.stroke();
+ }else if(p.type==='bolt'){
+  ctx.strokeStyle=p.stroke||p.color;ctx.lineWidth=Math.max(1.8,size*.12);ctx.beginPath();ctx.moveTo(-size*.7,-size*.5);ctx.lineTo(-size*.18,-size*.82);ctx.lineTo(-size*.24,-size*.2);ctx.lineTo(size*.06,-size*.2);ctx.lineTo(-size*.08,size*.22);ctx.lineTo(size*.26,size*.12);ctx.lineTo(size*.02,size*.82);ctx.lineTo(size*.68,size*.42);ctx.stroke();
+ }else if(p.type==='orb'){
+  ctx.shadowColor=p.color;ctx.shadowBlur=size*1.35;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(0,0,size*.76,0,Math.PI*2);ctx.fill();
+ }else if(p.type==='dragon'){
+  ctx.fillStyle='#ff8e40';ctx.beginPath();ctx.moveTo(-size*.8,size*.15);ctx.quadraticCurveTo(-size*.15,-size*.9,size*.72,-size*.18);ctx.quadraticCurveTo(size*.98,0,size*.35,size*.22);ctx.quadraticCurveTo(size*.05,size*.65,-size*.8,size*.15);ctx.fill();ctx.fillStyle='#ffd56c';ctx.beginPath();ctx.moveTo(size*.1,-size*.18);ctx.lineTo(size*.58,-size*.05);ctx.lineTo(size*.22,size*.16);ctx.closePath();ctx.fill();ctx.fillStyle='#2b1400';ctx.beginPath();ctx.arc(size*.35,-size*.1,size*.08,0,Math.PI*2);ctx.fill();
+ }else if(p.type==='snowburst'){
+  ctx.strokeStyle=p.stroke||p.color;ctx.lineWidth=Math.max(1.6,size*.08);for(let a=0;a<6;a++){ctx.save();ctx.rotate(a*Math.PI/3);ctx.beginPath();ctx.moveTo(0,-size);ctx.lineTo(0,size);ctx.moveTo(0,-size*.55);ctx.lineTo(size*.22,-size*.72);ctx.moveTo(0,-size*.55);ctx.lineTo(-size*.22,-size*.72);ctx.moveTo(0,size*.55);ctx.lineTo(size*.22,size*.72);ctx.moveTo(0,size*.55);ctx.lineTo(-size*.22,size*.72);ctx.stroke();ctx.restore();}
+ }else if(p.type==='chain'){
+  ctx.strokeStyle=p.stroke||p.color;ctx.lineWidth=Math.max(2,size*.08);ctx.beginPath();ctx.moveTo(-size*.9,-size*.3);ctx.lineTo(-size*.55,-size*.65);ctx.lineTo(-size*.2,-size*.18);ctx.lineTo(size*.12,-size*.5);ctx.lineTo(size*.42,-size*.05);ctx.lineTo(size*.82,-size*.42);ctx.stroke();
+ }else if(p.type==='rift'){
+  ctx.strokeStyle=p.stroke||p.color;ctx.lineWidth=Math.max(1.8,size*.09);ctx.beginPath();ctx.ellipse(0,0,size*.38,size,0,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(0,-size);ctx.bezierCurveTo(size*.3,-size*.55,-size*.2,size*.15,0,size);ctx.stroke();
+ }else{
+  ctx.fillStyle=p.color;ctx.fillRect(-size*.5,-size*.5,size,size);
+ }
+ ctx.restore();}
+ ctx.globalAlpha=1}
+function drawCharging(now){if(st.phase!=='playing')return;
+ for(let i=0;i<(twoPlayers()?2:1);i++){
+ const ch=chargeFor(i);if(!ch)continue;const h=playerActor(i),p=powerLevel(now,i),x=clamp(h.x-38,C.l,C.r-76),y=h.y+(playerTeam(i)===1?39:-63);
+ drawRounded(x,y,76,14,6,'#081c30e0',i?'#ffba76':'#f4ffa5');ctx.fillStyle=p<.75?(i?'#ffc47c':'#caff6b'):'#ff9476';ctx.fillRect(x+3,y+3,Math.max(0,70*p),8);ctx.font='850 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(playerName(i)+' '+Math.round(p*100)+'%',x+38,y-5);
+ }
+}
+function drawTouchControls(){if(!touchCanvas)return;ctx.save();ctx.textAlign='center';ctx.font='800 12px system-ui';ctx.fillStyle='#e7faff';ctx.globalAlpha=.85;ctx.fillText('이동',111,390);ctx.fillText('기술 / 타격',823,390);
+ const dirs=[['up',110,422,'▲'],['left',65,470,'◀'],['down',110,470,'▼'],['right',155,470,'▶']];
+ for(const [d,x,y,lab]of dirs){ctx.beginPath();ctx.arc(x,y,24,0,Math.PI*2);ctx.fillStyle=pressedDirs.has(d)?'#65f0e9e8':'#12354ad4';ctx.fill();ctx.strokeStyle='#a5d4e3';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=pressedDirs.has(d)?'#132631':'#eeffff';ctx.font='950 18px system-ui';ctx.fillText(lab,x,y+6)}
+ const shots=[['dink',765,twoPlayers()?'F 딩크':'J 딩크'],['drive',828,twoPlayers()?'G 드라이브':'K 드라이브'],['lob',891,twoPlayers()?'H 로브':'L 로브']];
+ for(const [id,x,name]of shots){drawRounded(x-30,409,60,37,9,charge?.type===id?'#f4fb7a':selected===id?'#55e7e1eb':'#193a50dc','#9bdce7');ctx.fillStyle=selected===id?'#112939':'#eefcff';ctx.font='850 12px system-ui';ctx.fillText(name,x,432)}
+ ctx.beginPath();ctx.arc(825,504,46,0,Math.PI*2);ctx.fillStyle='#e4ff62';ctx.fill();ctx.strokeStyle='#a4b342';ctx.lineWidth=4;ctx.stroke();ctx.fillStyle='#172b29';ctx.font='1000 18px system-ui';ctx.fillText(st.phase==='between'?'다음':!st.ball?'서브':'기본 타격',825,509);ctx.restore()}
+function drawBanner(now){const tt=toast.until-now;if(tt>0){const w=Math.min(460,Math.max(270,toast.text.length*13));drawRounded(C.cx-w/2,402,w,44,12,'#082b40e9','#cde87c');ctx.textAlign='center';ctx.font='900 15px system-ui';ctx.fillStyle='#fff';ctx.fillText(toast.text,C.cx,429)}
+ if(rewardSplashUntil>now){const pulse=1+0.04*Math.sin(now/95),alpha=Math.min(1,(rewardSplashUntil-now)/2600+.22);ctx.save();ctx.globalAlpha=Math.min(1,alpha);drawRounded(190,42,540,94,18,'#1f2537f3','#ffe86f');ctx.strokeStyle='#fff7b5';ctx.lineWidth=3;ctx.stroke();ctx.shadowColor='#ffe86f';ctx.shadowBlur=26;ctx.fillStyle='#ffe86f';ctx.textAlign='center';ctx.font=`1000 ${Math.round(30*pulse)}px system-ui`;ctx.fillText(rewardSplashText||'🎟️ 뽑기권 +1',C.cx,81);ctx.shadowBlur=0;ctx.fillStyle='#ffffff';ctx.font='900 17px system-ui';ctx.fillText(rewardSplashSub||'I키 또는 오른쪽 아이템창으로 바로 이동!',C.cx,109);ctx.fillStyle='#fff6ad';ctx.font='900 15px system-ui';ctx.fillText('✨ 지금 바로 뽑기 가능 ✨',C.cx,129);ctx.restore();}
+ if(st.phase==='between'){drawRounded(232,248,456,122,15,'#0f2539ed','#b9ecfa');ctx.textAlign='center';ctx.fillStyle='#e8ff81';ctx.font='950 22px system-ui';ctx.fillText(st.winner===0?(isPvP()?'🔵 학생 1 랠리 승리!':'🔵 우리 팀 랠리 승리!'):(isPvP()?'🟠 학생 2 랠리 승리!':'🟠 상대 팀 랠리 승리!'),C.cx,281);ctx.fillStyle='#ffffff';ctx.font='850 15px system-ui';ctx.fillText(st.lastDecision?`실점 사유: ${isPvP()?playerName(st.lastDecision.offender):st.lastDecision.offender===0?'우리 팀':'상대 AI'} ${st.lastDecision.reason}`:'판정 확인',C.cx,307,420);ctx.fillStyle=st.lastReward?'#fff29c':'#d6e9f5';ctx.font=st.lastReward?'1000 17px system-ui':'800 13px system-ui';ctx.fillText(st.lastReward?'🎁 뽑기권 획득!  I키 또는 아이템창으로 이동':'SPACE 다음 랠리 · I 아이템창',C.cx,333,420);ctx.fillStyle='#d6e9f5';ctx.font='900 15px system-ui';ctx.fillText(`현재 ${st.scores[0]} : ${st.scores[1]}`,C.cx,355)}
+ if(st.phase==='playing'&&!st.ball&&(isOwnServe(0)||isOwnServe(1))){drawRounded(298,245,324,42,12,'#06283bdc','#c2e66e');ctx.fillStyle='#efffa5';ctx.font='900 14px system-ui';ctx.textAlign='center';ctx.fillText(twoPlayers()?`${isOwnServe(0)?'학생 1 (F/G/H)':'학생 2 (J/K/L)'} 길게 → 떼면 서브!`:'SPACE 길게 누르고 떼면 서브!',C.cx,271)}
+ if(st.phase==='playing'&&mode==='solo'&&st.ball&&st.ball.toTeam===0&&assignedToPartner(st.ball)){ctx.fillStyle='#e5f6ff';ctx.font='900 13px system-ui';ctx.textAlign='center';ctx.fillText('🤝 AI 파트너 구역 · 파트너가 처리해요',C.cx,396,330)}
+ if(st.phase==='playing'&&st.ball&&st.ball.toTeam===0&&st.ball.shotIndex<=2){drawRounded(301,246,316,37,10,'#071a31db','#f2d18a');ctx.fillStyle='#fff2bc';ctx.font='850 14px system-ui';ctx.textAlign='center';ctx.fillText('⏬ 투바운드 규칙! 먼저 바운드시키세요',C.cx,270)}
+}
+function paint(now,dt){ctx.save();if(now<screenShakeUntil){const fade=Math.max(.12,(screenShakeUntil-now)/320);ctx.translate(rand(-screenShakeMag,screenShakeMag)*fade,rand(-screenShakeMag,screenShakeMag)*fade)}else screenShakeMag=0;drawBackground(now);drawAim(now);drawCharacter(opp[0],colors.opp,isPvP()?'P2':'1',1,now);if(!isPvP())drawCharacter(opp[1],colors.opp2,'2',1,now);if(!isPvP())drawCharacter(partner,colors.partner,mode==='coop'?'P2':'AI',0,now);drawCharacter(user,colors.our,twoPlayers()?'P1':'나',0,now,true);drawBall(now);drawCharging(now);drawParticles(dt);drawTouchControls();drawBanner(now);ctx.restore()}
+function loop(now){if(!lastTime)lastTime=now;const dt=Math.min(.045,(now-lastTime)/1000);lastTime=now;ctxTime=now;frame++;if(st.phase==='playing'){updateUser(dt);updateBall(now);updateAI(dt,now)}refreshPower(now);paint(now,dt);requestAnimationFrame(loop)}
+// Pointer-based touch and mouse controls
+function canvasPoint(ev){const r=canvas.getBoundingClientRect();return{x:(ev.clientX-r.left)*W/r.width,y:(ev.clientY-r.top)*H/r.height}}
+canvas.addEventListener('pointerdown',ev=>{
+ if(st.phase==='between'&&!inventoryOpen){startRally();ev.preventDefault();return}
+ if(st.phase!=='playing'||inventoryOpen)return;
+ const p=canvasPoint(ev);
+ if(touchCanvas&&p.y>390&&p.x<195){const dirs=[['up',110,422],['left',65,470],['down',110,470],['right',155,470]];for(const[d,x,y]of dirs){if(Math.hypot(p.x-x,p.y-y)<31){pressedDirs.add(d);canvasPointers.set(ev.pointerId,d);try{canvas.setPointerCapture(ev.pointerId)}catch{}ev.preventDefault();return}}}
+ if(touchCanvas&&p.y>393&&p.x>730){
+  if(p.y<454){const which=p.x<797?'dink':p.x<858?'drive':'lob';if(setCharge(which,'canvas',String(ev.pointerId)))canvasChargePointer=ev.pointerId}
+  else if(Math.hypot(p.x-825,p.y-504)<54){if(setCharge('drive','canvas',String(ev.pointerId)))canvasChargePointer=ev.pointerId}
+  try{canvas.setPointerCapture(ev.pointerId)}catch{}ev.preventDefault();return;
+ }
+ if(p.x>=C.l-20&&p.x<=C.r+20&&p.y>=C.t-10&&p.y<=C.b+10){if(st.serveTeam===0&&!st.ball){aim={x:p.x,y:p.y,manual:true};hint('서브 방향과 거리를 선택했어요.')}else if(p.y<C.net){aim.y=p.y;aim.manual=true;hint('타격 깊이를 조절했어요. 좌우 방향은 공과 선수의 접촉 위치로 결정됩니다.')}ev.preventDefault()}
+});
+function releaseCanvasPointer(ev){
+ const dir=canvasPointers.get(ev.pointerId);if(dir){pressedDirs.delete(dir);canvasPointers.delete(ev.pointerId)}
+ if(canvasChargePointer===ev.pointerId){endCharge('canvas',String(ev.pointerId),ev.type!=='pointerup');canvasChargePointer=null}
+}
+['pointerup','pointercancel','lostpointercapture'].forEach(e=>canvas.addEventListener(e,releaseCanvasPointer));
+document.querySelectorAll('[data-dir]').forEach(btn=>{const d=btn.dataset.dir;const down=ev=>{ev.preventDefault();pressedDirs.add(d);btn.classList.add('active');try{btn.setPointerCapture(ev.pointerId)}catch{}};const up=ev=>{ev.preventDefault();pressedDirs.delete(d);btn.classList.remove('active')};btn.addEventListener('pointerdown',down);['pointerup','pointercancel','lostpointercapture','pointerleave'].forEach(x=>btn.addEventListener(x,up))});
+document.querySelectorAll('[data-shot]').forEach(btn=>{
+ const type=btn.dataset.shot;
+ btn.addEventListener('pointerdown',ev=>{ev.preventDefault();if(setCharge(type,'shot',String(ev.pointerId)))try{btn.setPointerCapture(ev.pointerId)}catch{}});
+ btn.addEventListener('pointerup',ev=>{ev.preventDefault();endCharge('shot',String(ev.pointerId))});
+ btn.addEventListener('pointercancel',ev=>endCharge('shot',String(ev.pointerId),true));
+ btn.addEventListener('lostpointercapture',ev=>endCharge('shot',String(ev.pointerId),true));
+});
+$('hitBtn').addEventListener('pointerdown',ev=>{
+ ev.preventDefault();if(inventoryOpen)return;if(st.phase==='between'||st.phase==='intro'||st.phase==='over'){primaryAction();return}
+ if(mode==='solo'&&setCharge('drive','hit',String(ev.pointerId),0))try{$('hitBtn').setPointerCapture(ev.pointerId)}catch{}
+});
+$('hitBtn').addEventListener('pointerup',ev=>{ev.preventDefault();endCharge('hit',String(ev.pointerId))});
+$('hitBtn').addEventListener('pointercancel',ev=>endCharge('hit',String(ev.pointerId),true));
+$('hitBtn').addEventListener('lostpointercapture',ev=>endCharge('hit',String(ev.pointerId),true));$('nextBtn').addEventListener('click',()=>{if(st.phase==='between')startRally()});$('restartBtn').addEventListener('click',()=>{resetCharge();st.phase='intro';st.ball=null;updateUI();showOverlay('🔁','처음부터 다시 경기','현재 점수를 초기화하고 선택한 모드로 다시 시작합니다. 패들 수집 데이터는 유지됩니다.','새 경기 시작 (SPACE)')});
+$('modalGo').addEventListener('click',startMatch);$('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;$('soundBtn').textContent=soundOn?'🔊 소리 켜짐':'🔇 소리 꺼짐'});
+window.addEventListener('keydown',ev=>{
+ const key=ev.key.toLowerCase(),space=key===' '||key==='space';
+ if(inventoryOpen){if(key==='escape'){ev.preventDefault();closeInventory()}return;}
+ if(key==='i'){ev.preventDefault();if(!ev.repeat)openInventory();return;}
+ if(['SELECT','INPUT','TEXTAREA'].includes(document.activeElement?.tagName||''))return;
+ if(['arrowup','arrowdown','arrowleft','arrowright',' ','space','f','g','h','j','k','l'].includes(key))ev.preventDefault();
+ held.add(key);if(ev.repeat)return;
+ if(space){if(st.phase==='playing'&&mode==='solo'&&$('overlay').classList.contains('hidden'))setCharge('drive','keyboard',' ',0);else if(st.phase!=='playing')primaryAction();return;}
+ const p0=mode==='solo'?{j:'dink',k:'drive',l:'lob'}:{f:'dink',g:'drive',h:'lob'};
+ const p1={j:'dink',k:'drive',l:'lob'};
+ if(p0[key]){setCharge(p0[key],'keyboard',key,0);return}
+ if(twoPlayers()&&p1[key]){setCharge(p1[key],'keyboard',key,1);return}
+ if(key==='q'&&!st.ball&&st.serveTeam===0&&st.serverSlot===0){aim.manual=true;aim.x=clamp(aim.x-20,C.l-25,C.r+25)}
+ if(key==='e'&&!st.ball&&st.serveTeam===0&&st.serverSlot===0){aim.manual=true;aim.x=clamp(aim.x+20,C.l-25,C.r+25)}
+ if(key==='enter'&&st.phase==='between')startRally();
+});
+window.addEventListener('keyup',ev=>{
+ const key=ev.key.toLowerCase();held.delete(key);
+ if(key===' '||key==='space'){if(mode==='solo')endCharge('keyboard',' ',false,0);}
+ else if(mode==='solo'&&['j','k','l'].includes(key))endCharge('keyboard',key,false,0);
+ else if(twoPlayers()){
+  if(['f','g','h'].includes(key))endCharge('keyboard',key,false,0);
+  if(['j','k','l'].includes(key))endCharge('keyboard',key,false,1);
+ }
+});
+window.addEventListener('blur',()=>{held.clear();pressedDirs.clear();resetCharge()});
+resetState();updateCollectionSummary();requestAnimationFrame(loop);
+
+})();
+</script>
 </body>
 </html>
